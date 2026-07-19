@@ -98,10 +98,12 @@ describe('REQ-UI-014 — Mobile board scrolling', () => {
     expect(gridSrc).toMatch(/delay:\s*220/)
   })
 
-  it('reserves board space on narrow viewports', () => {
+  it('reserves board space and compact controls on narrow viewports', () => {
     const mobile = appCss.match(/@media \(max-width:\s*720px\)\s*\{[\s\S]*$/)?.[0] ?? ''
-    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*42dvh/s)
-    expect(mobile).toMatch(/\.topbar\s*\{[^}]*max-height:\s*34dvh/s)
+    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*58dvh/s)
+    expect(mobile).toMatch(/\.view-switch--days\s*\{[^}]*display:\s*none/s)
+    expect(mobile).toMatch(/\.day-span-select\s*\{[^}]*display:\s*inline-flex/s)
+    expect(mobile).toMatch(/\.topbar__optional\s*\{[^}]*display:\s*none/s)
   })
 })
 

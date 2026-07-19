@@ -1,6 +1,10 @@
 import { addDays, eachDayOfInterval, format, parseISO } from 'date-fns'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { loadChromeMinimized, saveChromeMinimized } from './chromePrefs'
+import {
+  isNarrowViewport,
+  loadChromeMinimized,
+  saveChromeMinimized,
+} from './chromePrefs'
 import { CalendarGrid } from './components/CalendarGrid'
 import { ChromePanel } from './components/ChromePanel'
 import type { ColoredDependency } from './components/DependencyArrows'
@@ -59,6 +63,11 @@ export default function App({ onLock }: AppProps) {
   const [projectFilter, setProjectFilter] = useState<string | 'all'>('all')
   const [activeFlowId, setActiveFlowId] = useState<string | null>(null)
   const [chromeMinimized, setChromeMinimized] = useState(loadChromeMinimized)
+
+  // Phones: start with projects/flows collapsed so the calendar gets the screen.
+  useEffect(() => {
+    if (isNarrowViewport()) setChromeMinimized(true)
+  }, [])
 
   function selectMainView(view: MainView) {
     setMainView(view)
@@ -265,7 +274,11 @@ export default function App({ onLock }: AppProps) {
 
           {mainView === 'board' && (
             <>
-              <div className="view-switch" role="tablist" aria-label="Number of days">
+              <div
+                className="view-switch view-switch--days"
+                role="tablist"
+                aria-label="Number of days"
+              >
                 {DAY_SPANS.map((span) => (
                   <button
                     key={span}
@@ -279,6 +292,23 @@ export default function App({ onLock }: AppProps) {
                   </button>
                 ))}
               </div>
+
+              <label className="day-span-select">
+                <span className="day-span-select__label">Days</span>
+                <select
+                  aria-label="Number of days"
+                  value={daySpan}
+                  onChange={(e) =>
+                    setDaySpan(Number(e.target.value) as (typeof DAY_SPANS)[number])
+                  }
+                >
+                  {DAY_SPANS.map((span) => (
+                    <option key={span} value={span}>
+                      {span} days
+                    </option>
+                  ))}
+                </select>
+              </label>
 
               <div className="week-nav">
                 <button
@@ -302,7 +332,7 @@ export default function App({ onLock }: AppProps) {
             </>
           )}
 
-          <span className="link-count" title="Visible dependency arrows">
+          <span className="link-count topbar__optional" title="Visible dependency arrows">
             {visibleDependencies.length} link
             {visibleDependencies.length === 1 ? '' : 's'}
           </span>
@@ -348,12 +378,15 @@ export default function App({ onLock }: AppProps) {
               })
             }
           >
-            + New task
+            <span className="btn__full">+ New task</span>
+            <span className="btn__short" aria-hidden="true">
+              +
+            </span>
           </button>
 
           <button
             type="button"
-            className="btn btn--ghost"
+            className="btn btn--ghost topbar__optional"
             onClick={() => {
               resetSample()
               setDaySpan(7)

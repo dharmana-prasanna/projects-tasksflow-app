@@ -197,6 +197,31 @@
   color: #fff;
 }
 
+.day-span-select {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.day-span-select select {
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  background: rgba(255, 255, 255, 0.72);
+  max-width: 8.5rem;
+}
+
+.btn__short {
+  display: none;
+}
+
 .link-count {
   font-size: 0.8rem;
   font-weight: 700;
@@ -1560,48 +1585,80 @@
 
 @media (max-width: 720px) {
   .app {
-    padding: 0.65rem;
-    gap: 0.45rem;
+    padding: 0.5rem;
+    gap: 0.35rem;
   }
 
   .brand__tag {
     display: none;
   }
 
-  .brand__name {
-    font-size: 1.25rem;
+  .brand__mark {
+    width: 1.85rem;
+    height: 1.85rem;
   }
 
-  /* Top chrome can scroll so it never eats the whole viewport */
+  .brand__name {
+    font-size: 1.15rem;
+  }
+
   .topbar {
-    flex-shrink: 1;
+    flex-shrink: 0;
     min-height: 0;
-    max-height: 34dvh;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
+    max-height: none;
+    overflow: visible;
+    gap: 0.45rem;
   }
 
   .topbar__controls {
     width: 100%;
+    gap: 0.4rem;
+  }
+
+  .topbar__optional {
+    display: none;
+  }
+
+  .btn__full {
+    display: none;
+  }
+
+  .btn__short {
+    display: inline;
+  }
+
+  /* Compact day picker instead of 11 span pills */
+  .view-switch--days {
+    display: none;
+  }
+
+  .day-span-select {
+    display: inline-flex;
   }
 
   .week-nav {
     flex: 1;
+    min-width: 0;
   }
 
   .week-label {
     min-width: 0;
     flex: 1;
+    font-size: 0.8rem;
   }
 
   .view-switch {
-    width: 100%;
+    width: auto;
+    flex: 1;
     justify-content: space-between;
   }
 
+  .hint {
+    display: none;
+  }
+
   .chrome-panel {
-    max-height: 26dvh;
+    max-height: 22dvh;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
@@ -1612,11 +1669,11 @@
     overflow: visible;
   }
 
-  /* Always keep a usable board region on phones */
+  /* Board takes most of the phone screen */
   .board-shell,
   .graph-view {
     flex: 1 1 0;
-    min-height: 42dvh;
+    min-height: 58dvh;
   }
 
   /* Modals: full width, stack date/time rows (iOS date inputs are wide) */

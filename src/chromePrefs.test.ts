@@ -47,11 +47,11 @@ describe('REQ-UI-011 / REQ-LOCAL-005 — Minimizable chrome', () => {
 })
 
 describe('REQ-UI-014 — Mobile layout keeps board visible', () => {
-  it('caps topbar/chrome height and reserves board min-height on narrow screens', () => {
+  it('compacts controls and reserves board min-height on narrow screens', () => {
     const css = readFileSync(resolve(here, 'App.css'), 'utf8')
     const mobile = css.match(/@media \(max-width:\s*720px\)\s*\{[\s\S]*$/)?.[0] ?? ''
-    expect(mobile).toMatch(/\.topbar\s*\{[^}]*max-height:\s*34dvh/s)
-    expect(mobile).toMatch(/\.chrome-panel\s*\{[^}]*max-height:\s*26dvh/s)
-    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*42dvh/s)
+    expect(mobile).toMatch(/\.view-switch--days\s*\{[^}]*display:\s*none/s)
+    expect(mobile).toMatch(/\.chrome-panel\s*\{[^}]*max-height:\s*22dvh/s)
+    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*58dvh/s)
   })
 })

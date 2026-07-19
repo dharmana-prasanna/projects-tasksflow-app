@@ -180,8 +180,9 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Task chips must **not** use `touch-action: none` at rest (that blocks scroll when the finger starts on a task); only while actively dragging.
 - Touch drag-and-drop uses a short activation delay so a normal swipe scrolls the board; mouse drag keeps a small distance threshold.
 - Board / graph scroll areas use a flex basis of `0` with `min-height: 0` so iOS Safari keeps them viewport-bounded and scrollable (page body stays `overflow: hidden`).
-- On narrow viewports (≤720px): topbar and projects/flows chrome are height-capped and independently scrollable; board/graph keep a minimum height (~42dvh) so controls cannot crush the calendar to zero.
-- When no chrome preference is saved yet, narrow viewports **default the projects/flows panel to minimized**.
+- On narrow viewports (≤720px): day-span **pill row is replaced by a compact dropdown**; optional controls (link count, Reset sample) and the usage hint are hidden; New task collapses to **+**.
+- Board/graph keep a minimum height (~58dvh). Projects/flows chrome is height-capped when expanded.
+- Narrow viewports **start with projects/flows minimized** on load so the calendar gets most of the screen (user can still Expand).
 
 ### REQ-UI-015 — Mobile modals fit the viewport
 - Modal dialogs (task / project / flow / sheets) must stay within the viewport on narrow screens — no horizontal clipping of fields (e.g. End date / End time).
