@@ -20,6 +20,12 @@ import {
 } from '../boardLayout'
 import { clientPointToRoot, elementCenterInRoot } from '../domain/arrowGeometry'
 import {
+  movementExceedsSlop,
+  shouldArmSlotSelectImmediately,
+  shouldCommitSlotSelect,
+  SLOT_SELECT_TOUCH_DELAY_MS,
+} from '../domain/slotSelectGesture'
+import {
   formatRange,
   isSegmentStart,
   moveTaskToSlot,
@@ -76,6 +82,13 @@ type SlotSelectSession = {
   date: string
   anchorIndex: number
   focusIndex: number
+  startX: number
+  startY: number
+  pointerType: string
+  /** False until mouse start or touch hold delay elapses. */
+  armed: boolean
+  /** True when the gesture was abandoned as a scroll. */
+  cancelled: boolean
 }
 
 export function CalendarGrid({
@@ -99,6 +112,22 @@ export function CalendarGrid({
   const linkRef = useRef<LinkSession | null>(null)
   const [slotSelect, setSlotSelect] = useState<SlotSelectSession | null>(null)
   const slotSelectRef = useRef<SlotSelectSession | null>(null)
+  const slotArmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function clearSlotArmTimer() {
+    if (slotArmTimerRef.current != null) {
+      clearTimeout(slotArmTimerRef.current)
+      slotArmTimerRef.current = null
+    }
+  }
+
+  function cancelSlotSelect() {
+    clearSlotArmTimer()
+    const s = slotSelectRef.current
+    if (!s) return
+    slotSelectRef.current = { ...s, cancelled: true, armed: false }
+    setSlotSelect(null)
+  }
   const [colPrefs, setColPrefs] = useState<ColWidthPrefs>(() => loadColWidthPrefs())
   const [resizingCols, setResizingCols] = useState(false)
   const colResizeRef = useRef<{
@@ -232,7 +261,21 @@ export function CalendarGrid({
 
     function onMove(e: PointerEvent) {
       const s = slotSelectRef.current
-      if (!s || s.pointerId !== e.pointerId) return
+      if (!s || s.pointerId !== e.pointerId || s.cancelled) return
+
+      // Touch: finger moved before hold armed → treat as scroll, do not create.
+      if (
+        !s.armed &&
+        movementExceedsSlop(s.startX, s.startY, e.clientX, e.clientY)
+      ) {
+        clearSlotArmTimer()
+        slotSelectRef.current = { ...s, cancelled: true }
+        setSlotSelect(null)
+        return
+      }
+
+      if (!s.armed) return
+
       const cell = cellUnderPoint(e.clientX, e.clientY)
       if (!cell || cell.date !== s.date) return
       if (cell.index === s.focusIndex) return
@@ -244,8 +287,11 @@ export function CalendarGrid({
     function onUp(e: PointerEvent) {
       const s = slotSelectRef.current
       if (!s || s.pointerId !== e.pointerId) return
+      clearSlotArmTimer()
       slotSelectRef.current = null
       setSlotSelect(null)
+
+      if (!shouldCommitSlotSelect(s)) return
 
       const range = selectionToRange(s.anchorIndex, s.focusIndex)
       onCreateTask({
@@ -254,15 +300,36 @@ export function CalendarGrid({
       })
     }
 
+    function onCancel(e: PointerEvent) {
+      const s = slotSelectRef.current
+      if (!s || s.pointerId !== e.pointerId) return
+      clearSlotArmTimer()
+      slotSelectRef.current = null
+      setSlotSelect(null)
+    }
+
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
+    window.addEventListener('pointercancel', onCancel)
     return () => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
+      window.removeEventListener('pointercancel', onCancel)
     }
   }, [onCreateTask])
+
+  // Board scroll (touch pan) abandons any pending slot-select create.
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    function onScroll() {
+      const s = slotSelectRef.current
+      if (!s || s.cancelled) return
+      cancelSlotSelect()
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
 
   function startSlotSelect(
     date: string,
@@ -283,16 +350,38 @@ export function CalendarGrid({
         return
       }
     }
-    e.preventDefault()
+
+    clearSlotArmTimer()
+    const armed = shouldArmSlotSelectImmediately(e.pointerType)
+    // Only suppress browser gestures once mouse selection is active.
+    if (armed) e.preventDefault()
+
     const index = slotIndex(hour, minute)
     const session: SlotSelectSession = {
       pointerId: e.pointerId,
       date,
       anchorIndex: index,
       focusIndex: index,
+      startX: e.clientX,
+      startY: e.clientY,
+      pointerType: e.pointerType,
+      armed,
+      cancelled: false,
     }
     slotSelectRef.current = session
-    setSlotSelect(session)
+    setSlotSelect(armed ? session : null)
+
+    if (!armed) {
+      const pointerId = e.pointerId
+      slotArmTimerRef.current = setTimeout(() => {
+        slotArmTimerRef.current = null
+        const cur = slotSelectRef.current
+        if (!cur || cur.pointerId !== pointerId || cur.cancelled) return
+        const next = { ...cur, armed: true }
+        slotSelectRef.current = next
+        setSlotSelect(next)
+      }, SLOT_SELECT_TOUCH_DELAY_MS)
+    }
   }
 
   function isSlotSelected(date: string, hour: number, minute: number) {

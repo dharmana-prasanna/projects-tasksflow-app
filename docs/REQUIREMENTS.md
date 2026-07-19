@@ -84,6 +84,12 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Multiple cells → create range from first selected slot through exclusive end after the last selected slot.
 - Selection cannot cross days.
 
+### REQ-UI-016 — Touch scroll does not open create-task
+- On **touch**, slot-select create requires a short hold (~280ms) before it arms; a finger that moves past a small slop (scroll) cancels the gesture.
+- Scrolling the board abandons any pending slot-select.
+- Unarmed or cancelled gestures must **not** open the New task modal on pointer-up.
+- Mouse / pen still arm immediately for drag-to-create (desktop).
+
 ### REQ-TIME-008 — Formatting
 - `formatSlot` uses 12-hour clock with am/pm (midnight end-of-day displays as `12:00am`).
 - `formatRange` is `start–end`.
@@ -296,7 +302,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 | Time grid   | REQ-TIME-001 … 008                                   | `src/time.test.ts`                                 |
 | Model migrate | REQ-LOCAL-002, REQ-MODEL-*                         | `src/storage/migrate.test.ts`                      |
 | Dependencies| REQ-DEP-001 … 005, REQ-MODEL-004                     | `src/domain/dependencies.test.ts`                  |
-| Slot select | REQ-TIME-007                                         | `src/time.test.ts` (`selectionToRange`)            |
+| Slot select | REQ-TIME-007, REQ-UI-016                             | `src/time.test.ts`, `src/domain/slotSelectGesture.test.ts` |
 | Board layout| REQ-UI-008, REQ-UI-009, REQ-UI-014, REQ-UI-015, REQ-LOCAL-004 | `src/boardLayout.test.ts`                   |
 | Dep arrows  | REQ-UI-010                                           | `src/domain/arrowGeometry.test.ts`                 |
 | Chrome panel| REQ-UI-011, REQ-LOCAL-005                            | `src/chromePrefs.test.ts`                          |
