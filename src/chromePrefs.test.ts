@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   CHROME_MINIMIZED_KEY,
+  isNarrowViewport,
   loadChromeMinimized,
   saveChromeMinimized,
 } from './chromePrefs'
@@ -19,17 +20,22 @@ describe('REQ-UI-011 / REQ-LOCAL-005 — Minimizable chrome', () => {
     localStorage.clear()
   })
 
-  it('defaults to expanded (not minimized)', () => {
+  it('defaults to expanded on wide viewports when no preference saved', () => {
     expect(CHROME_MINIMIZED_KEY).toBe('flowboard-chrome-minimized')
-    expect(loadChromeMinimized()).toBe(false)
+    expect(loadChromeMinimized(() => ({ matches: false }))).toBe(false)
   })
 
-  it('persists minimized preference', () => {
+  it('defaults to minimized on narrow viewports when no preference saved', () => {
+    expect(isNarrowViewport(() => ({ matches: true }))).toBe(true)
+    expect(loadChromeMinimized(() => ({ matches: true }))).toBe(true)
+  })
+
+  it('persists minimized preference over viewport default', () => {
     saveChromeMinimized(true)
     expect(localStorage.getItem(CHROME_MINIMIZED_KEY)).toBe('true')
-    expect(loadChromeMinimized()).toBe(true)
+    expect(loadChromeMinimized(() => ({ matches: false }))).toBe(true)
     saveChromeMinimized(false)
-    expect(loadChromeMinimized()).toBe(false)
+    expect(loadChromeMinimized(() => ({ matches: true }))).toBe(false)
   })
 
   it('exposes minimize/expand chrome panel styles', () => {
@@ -37,5 +43,15 @@ describe('REQ-UI-011 / REQ-LOCAL-005 — Minimizable chrome', () => {
     expect(css).toMatch(/\.chrome-panel\s*\{/s)
     expect(css).toMatch(/\.chrome-panel--minimized\s*\{/s)
     expect(css).toMatch(/\.chrome-panel__toggle\s*\{/s)
+  })
+})
+
+describe('REQ-UI-014 — Mobile layout keeps board visible', () => {
+  it('caps topbar/chrome height and reserves board min-height on narrow screens', () => {
+    const css = readFileSync(resolve(here, 'App.css'), 'utf8')
+    const mobile = css.match(/@media \(max-width:\s*720px\)\s*\{[\s\S]*$/)?.[0] ?? ''
+    expect(mobile).toMatch(/\.topbar\s*\{[^}]*max-height:\s*34dvh/s)
+    expect(mobile).toMatch(/\.chrome-panel\s*\{[^}]*max-height:\s*26dvh/s)
+    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*42dvh/s)
   })
 })

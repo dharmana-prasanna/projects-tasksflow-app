@@ -97,6 +97,12 @@ describe('REQ-UI-014 — Mobile board scrolling', () => {
     expect(gridSrc).toMatch(/MouseSensor/)
     expect(gridSrc).toMatch(/delay:\s*220/)
   })
+
+  it('reserves board space on narrow viewports', () => {
+    const mobile = appCss.match(/@media \(max-width:\s*720px\)\s*\{[\s\S]*$/)?.[0] ?? ''
+    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*42dvh/s)
+    expect(mobile).toMatch(/\.topbar\s*\{[^}]*max-height:\s*34dvh/s)
+  })
 })
 
 describe('REQ-UI-009 / REQ-LOCAL-004 — Resizable day columns', () => {

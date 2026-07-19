@@ -1,9 +1,34 @@
 export const CHROME_MINIMIZED_KEY = 'flowboard-chrome-minimized'
 
-/** Whether the projects/flows chrome panel starts minimized. */
-export function loadChromeMinimized(): boolean {
+const NARROW_QUERY = '(max-width: 720px)'
+
+/** True when viewport is phone-sized (board must keep visible space). */
+export function isNarrowViewport(
+  matchMedia: (query: string) => { matches: boolean } = (q) =>
+    typeof window !== 'undefined'
+      ? window.matchMedia(q)
+      : { matches: false },
+): boolean {
   try {
-    return localStorage.getItem(CHROME_MINIMIZED_KEY) === 'true'
+    return matchMedia(NARROW_QUERY).matches
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Whether the projects/flows chrome panel starts minimized.
+ * Saved preference wins; if unset, narrow viewports default to minimized
+ * so the calendar board is not crushed to zero height on phones.
+ */
+export function loadChromeMinimized(
+  matchMedia?: (query: string) => { matches: boolean },
+): boolean {
+  try {
+    const raw = localStorage.getItem(CHROME_MINIMIZED_KEY)
+    if (raw === 'true') return true
+    if (raw === 'false') return false
+    return isNarrowViewport(matchMedia ?? undefined)
   } catch {
     return false
   }
