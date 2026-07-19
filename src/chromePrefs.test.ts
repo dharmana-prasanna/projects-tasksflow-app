@@ -50,8 +50,9 @@ describe('REQ-UI-014 — Mobile layout keeps board visible', () => {
   it('compacts controls and reserves board min-height on narrow screens', () => {
     const css = readFileSync(resolve(here, 'App.css'), 'utf8')
     const mobile = css.match(/@media \(max-width:\s*720px\)\s*\{[\s\S]*$/)?.[0] ?? ''
+    expect(mobile).toMatch(/\.brand\s*\{[^}]*position:\s*absolute/s)
+    expect(mobile).toMatch(/\.topbar__row\s*\{[^}]*display:\s*flex/s)
     expect(mobile).toMatch(/\.view-switch--days\s*\{[^}]*display:\s*none/s)
-    expect(mobile).toMatch(/\.chrome-panel\s*\{[^}]*max-height:\s*22dvh/s)
-    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*58dvh/s)
+    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*72dvh/s)
   })
 })

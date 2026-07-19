@@ -251,29 +251,109 @@ export default function App({ onLock }: AppProps) {
         </div>
 
         <div className="topbar__controls">
-          <div className="view-switch" role="tablist" aria-label="Main view">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mainView === 'board'}
-              className={`view-switch__btn${mainView === 'board' ? ' view-switch__btn--active' : ''}`}
-              onClick={() => selectMainView('board')}
-            >
-              Board
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mainView === 'graph'}
-              className={`view-switch__btn${mainView === 'graph' ? ' view-switch__btn--active' : ''}`}
-              onClick={() => selectMainView('graph')}
-            >
-              Graph
-            </button>
+          <div className="topbar__row topbar__row--primary">
+            <div className="view-switch" role="tablist" aria-label="Main view">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mainView === 'board'}
+                className={`view-switch__btn${mainView === 'board' ? ' view-switch__btn--active' : ''}`}
+                onClick={() => selectMainView('board')}
+              >
+                Board
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mainView === 'graph'}
+                className={`view-switch__btn${mainView === 'graph' ? ' view-switch__btn--active' : ''}`}
+                onClick={() => selectMainView('graph')}
+              >
+                Graph
+              </button>
+            </div>
+
+            <div className="topbar__actions">
+              <span className="link-count topbar__optional" title="Visible dependency arrows">
+                {visibleDependencies.length} link
+                {visibleDependencies.length === 1 ? '' : 's'}
+              </span>
+
+              {onLock && (
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--icon"
+                  onClick={onLock}
+                  title="Lock Flowboard"
+                  aria-label="Lock Flowboard"
+                >
+                  Lock
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="btn btn--ghost sync-btn btn--icon"
+                onClick={() => setStorageOpen(true)}
+                title={syncError ?? 'Google Sheets sync'}
+                aria-label="Sheets sync"
+              >
+                <span className={`sync-dot sync-dot--${syncStatus}`} aria-hidden="true" />
+                <span className="btn__full">
+                  {syncStatus === 'local-only'
+                    ? 'Local'
+                    : syncStatus === 'saving'
+                      ? 'Saving…'
+                      : syncStatus === 'loading'
+                        ? 'Loading…'
+                        : syncStatus === 'error'
+                          ? 'Sync error'
+                          : 'Sheets'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="btn btn--primary btn--icon"
+                onClick={() =>
+                  setEditingTask({
+                    title: '',
+                    notes: '',
+                    projectId: defaultProjectId(),
+                    segments: [singleDaySegment(days[0], 9, 0)],
+                  })
+                }
+                aria-label="New task"
+              >
+                <span className="btn__full">+ New task</span>
+                <span className="btn__short" aria-hidden="true">
+                  +
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="btn btn--ghost topbar__optional"
+                onClick={() => {
+                  resetSample()
+                  setDaySpan(7)
+                  setProjectFilter('all')
+                  setActiveFlowId(null)
+                  setCursor(parseISO('2026-07-20'))
+                  showToast(
+                    sheetsUrl
+                      ? 'Sample board restored (will sync to Sheets)'
+                      : 'Sample board restored',
+                  )
+                }}
+              >
+                Reset sample
+              </button>
+            </div>
           </div>
 
           {mainView === 'board' && (
-            <>
+            <div className="topbar__row topbar__row--nav">
               <div
                 className="view-switch view-switch--days"
                 role="tablist"
@@ -304,7 +384,7 @@ export default function App({ onLock }: AppProps) {
                 >
                   {DAY_SPANS.map((span) => (
                     <option key={span} value={span}>
-                      {span} days
+                      {span}d
                     </option>
                   ))}
                 </select>
@@ -329,79 +409,8 @@ export default function App({ onLock }: AppProps) {
                   →
                 </button>
               </div>
-            </>
+            </div>
           )}
-
-          <span className="link-count topbar__optional" title="Visible dependency arrows">
-            {visibleDependencies.length} link
-            {visibleDependencies.length === 1 ? '' : 's'}
-          </span>
-
-          {onLock && (
-            <button
-              type="button"
-              className="btn btn--ghost"
-              onClick={onLock}
-              title="Lock Flowboard"
-            >
-              Lock
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="btn btn--ghost sync-btn"
-            onClick={() => setStorageOpen(true)}
-            title={syncError ?? 'Google Sheets sync'}
-          >
-            <span className={`sync-dot sync-dot--${syncStatus}`} aria-hidden="true" />
-            {syncStatus === 'local-only'
-              ? 'Local'
-              : syncStatus === 'saving'
-                ? 'Saving…'
-                : syncStatus === 'loading'
-                  ? 'Loading…'
-                  : syncStatus === 'error'
-                    ? 'Sync error'
-                    : 'Sheets'}
-          </button>
-
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={() =>
-              setEditingTask({
-                title: '',
-                notes: '',
-                projectId: defaultProjectId(),
-                segments: [singleDaySegment(days[0], 9, 0)],
-              })
-            }
-          >
-            <span className="btn__full">+ New task</span>
-            <span className="btn__short" aria-hidden="true">
-              +
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className="btn btn--ghost topbar__optional"
-            onClick={() => {
-              resetSample()
-              setDaySpan(7)
-              setProjectFilter('all')
-              setActiveFlowId(null)
-              setCursor(parseISO('2026-07-20'))
-              showToast(
-                sheetsUrl
-                  ? 'Sample board restored (will sync to Sheets)'
-                  : 'Sample board restored',
-              )
-            }}
-          >
-            Reset sample
-          </button>
         </div>
       </header>
 

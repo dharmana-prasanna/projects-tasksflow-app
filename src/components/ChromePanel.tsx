@@ -30,7 +30,12 @@ export function ChromePanel({ minimized, onToggle, summary, children }: Props) {
           aria-controls="chrome-panel-body"
           title={minimized ? 'Expand projects and flows' : 'Minimize projects and flows'}
         >
-          {minimized ? 'Expand' : 'Minimize'}
+          <span className="chrome-panel__toggle-full">
+            {minimized ? 'Expand' : 'Minimize'}
+          </span>
+          <span className="chrome-panel__toggle-short" aria-hidden="true">
+            {minimized ? '▸' : '▾'}
+          </span>
         </button>
       </div>
       {!minimized && (

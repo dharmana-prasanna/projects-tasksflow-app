@@ -180,8 +180,8 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Task chips must **not** use `touch-action: none` at rest (that blocks scroll when the finger starts on a task); only while actively dragging.
 - Touch drag-and-drop uses a short activation delay so a normal swipe scrolls the board; mouse drag keeps a small distance threshold.
 - Board / graph scroll areas use a flex basis of `0` with `min-height: 0` so iOS Safari keeps them viewport-bounded and scrollable (page body stays `overflow: hidden`).
-- On narrow viewports (≤720px): day-span **pill row is replaced by a compact dropdown**; optional controls (link count, Reset sample) and the usage hint are hidden; New task collapses to **+**.
-- Board/graph keep a minimum height (~58dvh). Projects/flows chrome is height-capped when expanded.
+- On narrow viewports (≤720px): chrome is **two compact rows** (Board/Graph + actions; days dropdown + date nav). Brand title is visually hidden; day-span pills, link count, Reset sample, and usage hint are hidden; Sheets shows status dot only; New task is **+**; projects/flows toggle is a short chevron.
+- Board/graph keep a minimum height (~72dvh). Projects/flows chrome is height-capped when expanded.
 - Narrow viewports **start with projects/flows minimized** on load so the calendar gets most of the screen (user can still Expand).
 
 ### REQ-UI-015 — Mobile modals fit the viewport
