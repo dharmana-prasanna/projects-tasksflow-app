@@ -1204,7 +1204,8 @@
 }
 
 .modal--wide {
-  width: min(520px, 100%);
+  width: min(520px, calc(100vw - 2rem));
+  max-width: 100%;
 }
 
 .btn {
@@ -1267,19 +1268,31 @@
   background: rgba(18, 32, 42, 0.45);
   display: grid;
   place-items: center;
-  padding: 1rem;
+  padding: max(0.65rem, env(safe-area-inset-top, 0px))
+    max(0.65rem, env(safe-area-inset-right, 0px))
+    max(0.65rem, env(safe-area-inset-bottom, 0px))
+    max(0.65rem, env(safe-area-inset-left, 0px));
   z-index: 20;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
   animation: fade-in 0.18s ease both;
+  box-sizing: border-box;
 }
 
 .modal {
-  width: min(420px, 100%);
+  width: min(420px, calc(100vw - 1.3rem));
+  max-width: 100%;
+  max-height: min(92dvh, 100%);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
   background: #fbfcfd;
   border-radius: 1rem;
   border: 1px solid var(--line);
   box-shadow: 0 24px 60px rgba(18, 32, 42, 0.25);
   padding: 1.1rem 1.15rem 1.2rem;
   animation: modal-in 0.22s ease both;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .modal__header {
@@ -1333,6 +1346,10 @@
   border-radius: 0.55rem;
   padding: 0.55rem 0.65rem;
   background: #fff;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .modal__form textarea {
@@ -1397,6 +1414,11 @@
   display: grid;
   grid-template-columns: 1.3fr 1fr;
   gap: 0.65rem;
+  min-width: 0;
+}
+
+.modal__row > * {
+  min-width: 0;
 }
 
 .color-field {
@@ -1595,5 +1617,27 @@
   .graph-view {
     flex: 1 1 0;
     min-height: 42dvh;
+  }
+
+  /* Modals: full width, stack date/time rows (iOS date inputs are wide) */
+  .modal,
+  .modal--wide {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90dvh;
+  }
+
+  .modal__row {
+    grid-template-columns: 1fr;
+  }
+
+  .modal__actions {
+    flex-wrap: wrap;
+  }
+
+  .modal__actions-right {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
   }
 }

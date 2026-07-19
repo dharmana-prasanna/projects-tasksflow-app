@@ -177,6 +177,12 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - On narrow viewports (≤720px): topbar and projects/flows chrome are height-capped and independently scrollable; board/graph keep a minimum height (~42dvh) so controls cannot crush the calendar to zero.
 - When no chrome preference is saved yet, narrow viewports **default the projects/flows panel to minimized**.
 
+### REQ-UI-015 — Mobile modals fit the viewport
+- Modal dialogs (task / project / flow / sheets) must stay within the viewport on narrow screens — no horizontal clipping of fields (e.g. End date / End time).
+- Modal width uses `min(…, 100vw − padding)` / `max-width: 100%` with `box-sizing: border-box`.
+- Form controls inside modals use `width: 100%`, `min-width: 0` so native date/time inputs cannot blow out the layout.
+- On narrow viewports (≤720px), two-column `modal__row` grids stack to a single column; the modal scrolls vertically within ~90dvh.
+
 ### REQ-AUTH-001 — Shared password gate config
 - Build-time env `VITE_FLOWBOARD_PASSWORD` configures a shared login password (trimmed).
 - Empty or unset password → **no login gate** (app opens immediately).
@@ -291,7 +297,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 | Model migrate | REQ-LOCAL-002, REQ-MODEL-*                         | `src/storage/migrate.test.ts`                      |
 | Dependencies| REQ-DEP-001 … 005, REQ-MODEL-004                     | `src/domain/dependencies.test.ts`                  |
 | Slot select | REQ-TIME-007                                         | `src/time.test.ts` (`selectionToRange`)            |
-| Board layout| REQ-UI-008, REQ-UI-009, REQ-UI-014, REQ-LOCAL-004   | `src/boardLayout.test.ts`                          |
+| Board layout| REQ-UI-008, REQ-UI-009, REQ-UI-014, REQ-UI-015, REQ-LOCAL-004 | `src/boardLayout.test.ts`                   |
 | Dep arrows  | REQ-UI-010                                           | `src/domain/arrowGeometry.test.ts`                 |
 | Chrome panel| REQ-UI-011, REQ-LOCAL-005                            | `src/chromePrefs.test.ts`                          |
 | Graph view  | REQ-UI-012, REQ-LOCAL-006, REQ-LOCAL-007             | `src/domain/graphLayout.test.ts`, `src/viewPrefs.test.ts`, `src/domain/arrowGeometry.test.ts`, `src/graphCurvePrefs.test.ts` |

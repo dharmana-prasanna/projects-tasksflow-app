@@ -105,6 +105,24 @@ describe('REQ-UI-014 — Mobile board scrolling', () => {
   })
 })
 
+describe('REQ-UI-015 — Mobile modals fit the viewport', () => {
+  const appCss = readCss('App.css')
+
+  it('constrains modal width to the viewport', () => {
+    expect(appCss).toMatch(/\.modal\s*\{[^}]*max-width:\s*100%/s)
+    expect(appCss).toMatch(/\.modal\s*\{[^}]*width:\s*min\([^)]*100vw/s)
+    expect(appCss).toMatch(
+      /\.modal__form input[\s\S]*?min-width:\s*0/s,
+    )
+  })
+
+  it('stacks modal rows on narrow screens', () => {
+    const mobile = appCss.match(/@media \(max-width:\s*720px\)\s*\{[\s\S]*$/)?.[0] ?? ''
+    expect(mobile).toMatch(/\.modal__row\s*\{[^}]*grid-template-columns:\s*1fr/s)
+    expect(mobile).toMatch(/\.modal,\s*\n\s*\.modal--wide\s*\{[^}]*width:\s*100%/s)
+  })
+})
+
 describe('REQ-UI-009 / REQ-LOCAL-004 — Resizable day columns', () => {
   beforeEach(() => {
     localStorage.clear()
