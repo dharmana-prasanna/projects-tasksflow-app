@@ -20,7 +20,12 @@ import { loadMainView, saveMainView, type MainView } from './viewPrefs'
 
 const DAY_SPANS = [1, 3, 7, 10, 15, 30, 60, 90, 180, 365] as const
 
-export default function App() {
+type AppProps = {
+  /** When set (password gate on), show Lock in the topbar. */
+  onLock?: () => void
+}
+
+export default function App({ onLock }: AppProps) {
   const {
     projects,
     flows,
@@ -301,6 +306,17 @@ export default function App() {
             {visibleDependencies.length} link
             {visibleDependencies.length === 1 ? '' : 's'}
           </span>
+
+          {onLock && (
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={onLock}
+              title="Lock Flowboard"
+            >
+              Lock
+            </button>
+          )}
 
           <button
             type="button"

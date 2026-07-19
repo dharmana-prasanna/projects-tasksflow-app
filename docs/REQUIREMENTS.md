@@ -175,6 +175,19 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Touch drag-and-drop uses a short activation delay so a normal swipe scrolls the board; mouse drag keeps a small distance threshold.
 - Board / graph scroll areas use a flex basis of `0` with `min-height: 0` so iOS Safari keeps them viewport-bounded and scrollable (page body stays `overflow: hidden`).
 
+### REQ-AUTH-001 — Shared password gate config
+- Build-time env `VITE_APP_PASSWORD` configures a shared login password (trimmed).
+- Empty or unset password → **no login gate** (app opens immediately).
+- Non-empty password → visitors must unlock before seeing the board.
+- This is a **casual shared gate**: Vite embeds `VITE_*` values in client JS (not server-side auth).
+
+### REQ-AUTH-002 — Unlock session
+- Correct password unlocks the app and stores a derived session token under `flowboard-auth-session` in **`sessionStorage`** (tab-scoped).
+- Wrong password leaves the session empty and keeps the login screen.
+- Changing the configured password invalidates prior session tokens.
+- **Lock** clears the session and returns to the login screen.
+- When the gate is disabled, unlock helpers treat the app as already unlocked.
+
 ---
 
 ## 4. Persistence — local
@@ -281,5 +294,6 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 | Chrome panel| REQ-UI-011, REQ-LOCAL-005                            | `src/chromePrefs.test.ts`                          |
 | Graph view  | REQ-UI-012, REQ-LOCAL-006, REQ-LOCAL-007             | `src/domain/graphLayout.test.ts`, `src/viewPrefs.test.ts`, `src/domain/arrowGeometry.test.ts`, `src/graphCurvePrefs.test.ts` |
 | Task deps   | REQ-UI-013                                           | `src/domain/taskDependents.test.ts`                |
+| Auth gate   | REQ-AUTH-001, REQ-AUTH-002                           | `src/auth/passwordGate.test.ts`                    |
 | Local cache | REQ-LOCAL-001, REQ-LOCAL-003                         | `src/storage/localCache.test.ts`                   |
 | Sync policy | REQ-SYNC-005                                         | `src/storage/syncPolicy.test.ts`                   |

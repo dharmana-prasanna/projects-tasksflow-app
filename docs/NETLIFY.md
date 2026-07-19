@@ -15,7 +15,7 @@
    - **Publish directory:** `dist`
    - **Node:** 22
 
-## Set the Sheets URL (keeps Sync button)
+## Environment variables
 
 1. Site → **Site configuration** → **Environment variables** → **Add a variable**.
 2. Add:
@@ -23,11 +23,14 @@
    | Key | Value |
    |-----|--------|
    | `VITE_SHEETS_SCRIPT_URL` | `https://script.google.com/macros/s/YOUR_ID/exec` |
+   | `VITE_APP_PASSWORD` | your shared password (optional; omit for open access) |
 
 3. Scopes: **Production** (and Deploy Previews if you want previews synced too).
 4. **Trigger deploy** (env vars only apply to new builds).
 
 The **Sheets** button stays in the UI for status, Pull, Push, Calendar, and optional URL override.
+
+With `VITE_APP_PASSWORD` set, visitors see an Unlock screen first. Unlock lasts for the browser tab (`sessionStorage`); use **Lock** in the topbar to sign out. This is a casual shared gate — the password is baked into the client build.
 
 ## Verify
 
@@ -42,6 +45,7 @@ The **Sheets** button stays in the UI for status, Pull, Push, Calendar, and opti
 npx netlify login
 npx netlify init
 npx netlify env:set VITE_SHEETS_SCRIPT_URL "https://script.google.com/macros/s/YOUR_ID/exec"
+npx netlify env:set VITE_APP_PASSWORD "your-shared-password"
 npx netlify deploy --prod --build
 ```
 
@@ -49,7 +53,7 @@ npx netlify deploy --prod --build
 
 ```bash
 cp .env.example .env.production
-# edit .env.production — set VITE_SHEETS_SCRIPT_URL
+# edit .env.production — set VITE_SHEETS_SCRIPT_URL and VITE_APP_PASSWORD
 npm run build
 npm run preview
 ```
