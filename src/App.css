@@ -622,6 +622,14 @@
   pointer-events: none;
 }
 
+.graph-node__time {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 550;
+  fill: var(--muted);
+  pointer-events: none;
+}
+
 .graph-edge__under {
   pointer-events: none;
   stroke: rgba(255, 255, 255, 0.92);

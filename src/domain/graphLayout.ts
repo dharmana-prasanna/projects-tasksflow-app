@@ -11,6 +11,9 @@ export type GraphNodeInput = {
   /** Start time on that day — used to stack within the column. */
   startHour: number
   startMinute: number
+  /** End time on that day — shown on the card (exclusive end). */
+  endHour: number
+  endMinute: number
 }
 
 export type GraphEdgeInput = {
@@ -55,7 +58,8 @@ export type GraphLayout = {
 }
 
 export const GRAPH_NODE_WIDTH = 168
-export const GRAPH_NODE_HEIGHT = 52
+/** Room for title + start/end time corners. */
+export const GRAPH_NODE_HEIGHT = 58
 export const GRAPH_GAP_X = 28
 export const GRAPH_GAP_Y = 16
 export const GRAPH_PAD = 24

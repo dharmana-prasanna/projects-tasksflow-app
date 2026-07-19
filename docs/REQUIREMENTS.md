@@ -166,6 +166,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Graph has **no time rows** (no hour/15‑minute grid).
 - Graph keeps **day columns** for every date that has **at least one task** (`daysWithTasks`); empty days are omitted.
 - Each task appears once under its earliest segment date (`taskColumnDate` / `primarySegment`).
+- Each node card shows **start time (bottom-left)** and **end time (bottom-right)** for that column day’s segment (`formatSlot`), with the title above — no full time grid.
 - Layout via `layoutDependencyGraph` (day columns left-to-right; tasks stacked **by start time** within a day, earliest first).
 - Arrows are **straight by default**. They bend only when the straight path would pass through another task box (`routeGraphEdge` / obstacle checks).
 - Bent arrows are drawn **above** task cards with a light under-stroke so they stay visible.

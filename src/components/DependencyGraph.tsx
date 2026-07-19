@@ -12,7 +12,7 @@ import {
   saveGraphCurve,
   type GraphBendMap,
 } from '../graphCurvePrefs'
-import { primarySegment } from '../time'
+import { formatSlot, primarySegment } from '../time'
 import type { ColoredTask } from '../types'
 import type { ColoredDependency } from './DependencyArrows'
 
@@ -68,6 +68,8 @@ export function DependencyGraph({
           date,
           startHour: seg.startHour,
           startMinute: seg.startMinute,
+          endHour: seg.endHour,
+          endMinute: seg.endMinute,
         }
       })
       .filter((n): n is NonNullable<typeof n> => Boolean(n))
@@ -310,15 +312,33 @@ export function DependencyGraph({
               />
               <text
                 className="graph-node__title"
-                x={14}
-                y={node.height / 2 + 1}
+                x={12}
+                y={22}
                 dominantBaseline="middle"
               >
                 {node.title.length > 22
                   ? `${node.title.slice(0, 21)}…`
                   : node.title}
               </text>
-              <title>{node.title}</title>
+              <text
+                className="graph-node__time graph-node__time--start"
+                x={12}
+                y={node.height - 10}
+              >
+                {formatSlot(node.startHour, node.startMinute)}
+              </text>
+              <text
+                className="graph-node__time graph-node__time--end"
+                x={node.width - 12}
+                y={node.height - 10}
+                textAnchor="end"
+              >
+                {formatSlot(node.endHour, node.endMinute)}
+              </text>
+              <title>
+                {node.title} · {formatSlot(node.startHour, node.startMinute)}–
+                {formatSlot(node.endHour, node.endMinute)}
+              </title>
             </g>
           ))}
 

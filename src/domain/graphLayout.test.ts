@@ -1,10 +1,16 @@
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
   assignLayers,
   daysWithTasks,
+  GRAPH_NODE_HEIGHT,
   layoutDependencyGraph,
   taskColumnDate,
 } from './graphLayout'
+
+const here = dirname(fileURLToPath(import.meta.url))
 
 describe('REQ-UI-012 — Dependency graph day columns', () => {
   it('assignLayers puts roots at 0 and dependents downstream', () => {
@@ -92,6 +98,8 @@ describe('REQ-UI-012 — Dependency graph day columns', () => {
           date: '2026-07-20',
           startHour: 5,
           startMinute: 0,
+          endHour: 6,
+          endMinute: 0,
         },
         {
           id: 'b',
@@ -100,6 +108,8 @@ describe('REQ-UI-012 — Dependency graph day columns', () => {
           date: '2026-07-22',
           startHour: 6,
           startMinute: 15,
+          endHour: 7,
+          endMinute: 0,
         },
         {
           id: 'c',
@@ -108,6 +118,8 @@ describe('REQ-UI-012 — Dependency graph day columns', () => {
           date: '2026-07-22',
           startHour: 8,
           startMinute: 30,
+          endHour: 10,
+          endMinute: 0,
         },
       ],
       [
@@ -144,6 +156,8 @@ describe('REQ-UI-012 — Dependency graph day columns', () => {
           date: '2026-07-22',
           startHour: 14,
           startMinute: 0,
+          endHour: 15,
+          endMinute: 0,
         },
         {
           id: 'early',
@@ -152,6 +166,8 @@ describe('REQ-UI-012 — Dependency graph day columns', () => {
           date: '2026-07-22',
           startHour: 9,
           startMinute: 0,
+          endHour: 10,
+          endMinute: 0,
         },
       ],
       [],
@@ -170,6 +186,8 @@ describe('REQ-UI-012 — Dependency graph day columns', () => {
           date: '2026-07-21',
           startHour: 9,
           startMinute: 0,
+          endHour: 10,
+          endMinute: 0,
         },
       ],
       [],
@@ -189,6 +207,8 @@ describe('REQ-UI-012 — Dependency graph day columns', () => {
         date: '2026-07-21',
         startHour: 10,
         startMinute: 0,
+        endHour: 11,
+        endMinute: 0,
       },
       {
         id: 'a',
@@ -197,11 +217,52 @@ describe('REQ-UI-012 — Dependency graph day columns', () => {
         date: '2026-07-20',
         startHour: 9,
         startMinute: 0,
+        endHour: 10,
+        endMinute: 0,
       },
     ]
     const edges = [{ id: 'e', fromId: 'a', toId: 'b', color: '#f' }]
     expect(layoutDependencyGraph(nodes, edges)).toEqual(
       layoutDependencyGraph(nodes, edges),
     )
+  })
+
+  it('keeps start/end times on laid-out nodes for corner labels', () => {
+    const layout = layoutDependencyGraph(
+      [
+        {
+          id: 'a',
+          title: 'Ready',
+          color: '#111',
+          date: '2026-07-20',
+          startHour: 9,
+          startMinute: 15,
+          endHour: 11,
+          endMinute: 30,
+        },
+      ],
+      [],
+    )
+    expect(layout.nodes[0]).toMatchObject({
+      startHour: 9,
+      startMinute: 15,
+      endHour: 11,
+      endMinute: 30,
+      height: GRAPH_NODE_HEIGHT,
+    })
+    expect(GRAPH_NODE_HEIGHT).toBeGreaterThanOrEqual(56)
+  })
+
+  it('renders start/end time corners on graph node cards', () => {
+    const css = readFileSync(resolve(here, '../App.css'), 'utf8')
+    const src = readFileSync(
+      resolve(here, '../components/DependencyGraph.tsx'),
+      'utf8',
+    )
+    expect(css).toMatch(/\.graph-node__time\s*\{/s)
+    expect(src).toMatch(/graph-node__time--start/)
+    expect(src).toMatch(/graph-node__time--end/)
+    expect(src).toMatch(/formatSlot\(node\.startHour/)
+    expect(src).toMatch(/formatSlot\(node\.endHour/)
   })
 })
