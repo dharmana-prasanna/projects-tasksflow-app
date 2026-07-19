@@ -1,0 +1,48 @@
+:root {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
+  --ink: #15252f;
+  --ink-accent: #1d4e89;
+  --muted: #5a6d78;
+  --line: #c7d5dc;
+  --line-soft: #dce6eb;
+  --bg0: #d9e8ec;
+  --bg1: #edf4f6;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  min-height: 100svh;
+  height: 100svh;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(31, 107, 90, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 90% 0%, rgba(29, 78, 137, 0.16), transparent 50%),
+    linear-gradient(165deg, var(--bg1), var(--bg0));
+  color: var(--ink);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}

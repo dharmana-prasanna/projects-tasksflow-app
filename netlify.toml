@@ -1,0 +1,17 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Set this in Netlify → Site configuration → Environment variables
+# (must be available at build time for Vite):
+#   VITE_SHEETS_SCRIPT_URL = https://script.google.com/macros/s/…/exec
+#
+# Or use the Netlify UI / CLI — do not commit secrets into this file.
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,0 +1,560 @@
+import { addDays, eachDayOfInterval, format, parseISO } from 'date-fns'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { loadChromeMinimized, saveChromeMinimized } from './chromePrefs'
+import { CalendarGrid } from './components/CalendarGrid'
+import { ChromePanel } from './components/ChromePanel'
+import type { ColoredDependency } from './components/DependencyArrows'
+import { DependencyGraph } from './components/DependencyGraph'
+import { FlowBar } from './components/FlowBar'
+import { FlowModal } from './components/FlowModal'
+import { ProjectBar } from './components/ProjectBar'
+import { ProjectModal } from './components/ProjectModal'
+import { StorageModal } from './components/StorageModal'
+import { TaskModal } from './components/TaskModal'
+import { FLOW_COLORS, PROJECT_COLORS } from './data/sample'
+import { planDependentSync } from './domain/taskDependents'
+import { useTaskStore } from './hooks/useTaskStore'
+import { singleDaySegment } from './time'
+import type { ColoredTask, Flow, Project, Task } from './types'
+import { loadMainView, saveMainView, type MainView } from './viewPrefs'
+
+const DAY_SPANS = [1, 3, 7, 10, 15, 30, 60, 90, 180, 365] as const
+
+export default function App() {
+  const {
+    projects,
+    flows,
+    tasks,
+    dependencies,
+    upsertProject,
+    deleteProject,
+    upsertFlow,
+    deleteFlow,
+    upsertTask,
+    deleteTask,
+    addDependency,
+    removeDependency,
+    resetSample,
+    sheetsUrl,
+    calendarSync,
+    syncStatus,
+    syncError,
+    updatedAt,
+    connectSheets,
+    disconnectSheets,
+    setCalendarSync,
+    pullFromSheets,
+    pushToSheets,
+    deleteInvalidTasks,
+  } = useTaskStore()
+
+  const [mainView, setMainView] = useState<MainView>(loadMainView)
+  const [daySpan, setDaySpan] = useState<(typeof DAY_SPANS)[number]>(7)
+  const [cursor, setCursor] = useState(() => parseISO('2026-07-20'))
+  const [projectFilter, setProjectFilter] = useState<string | 'all'>('all')
+  const [activeFlowId, setActiveFlowId] = useState<string | null>(null)
+  const [chromeMinimized, setChromeMinimized] = useState(loadChromeMinimized)
+
+  function selectMainView(view: MainView) {
+    setMainView(view)
+    saveMainView(view)
+  }
+  const [toast, setToast] = useState<string | null>(null)
+  const [storageOpen, setStorageOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<Partial<Task> | null>(null)
+  const [editingProject, setEditingProject] = useState<Partial<Project> | null>(null)
+  const [editingFlow, setEditingFlow] = useState<Partial<Flow> | null>(null)
+
+  function toggleChromeMinimized() {
+    setChromeMinimized((prev) => {
+      const next = !prev
+      saveChromeMinimized(next)
+      return next
+    })
+  }
+
+  // Keep active flow valid when filters/data change
+  useEffect(() => {
+    const visible =
+      projectFilter === 'all'
+        ? flows
+        : flows.filter((f) => f.projectId === projectFilter)
+    if (visible.length === 0) {
+      setActiveFlowId(null)
+      return
+    }
+    if (!activeFlowId || !visible.some((f) => f.id === activeFlowId)) {
+      setActiveFlowId(visible[0].id)
+    }
+  }, [flows, projectFilter, activeFlowId])
+
+  const projectColor = useMemo(() => {
+    const map = new Map(projects.map((p) => [p.id, p.color]))
+    return (projectId: string) => map.get(projectId) ?? PROJECT_COLORS[0]
+  }, [projects])
+
+  const flowById = useMemo(() => new Map(flows.map((f) => [f.id, f])), [flows])
+
+  const coloredTasks: ColoredTask[] = useMemo(
+    () =>
+      tasks.map((t) => ({
+        ...t,
+        color: projectColor(t.projectId),
+      })),
+    [tasks, projectColor],
+  )
+
+  const visibleTasks = useMemo(
+    () =>
+      projectFilter === 'all'
+        ? coloredTasks
+        : coloredTasks.filter((t) => t.projectId === projectFilter),
+    [coloredTasks, projectFilter],
+  )
+
+  const visibleDependencies: ColoredDependency[] = useMemo(() => {
+    const ids = new Set(visibleTasks.map((t) => t.id))
+    return dependencies
+      .filter((d) => ids.has(d.fromId) && ids.has(d.toId))
+      .map((d) => {
+        const flow = flowById.get(d.flowId)
+        return {
+          ...d,
+          color: flow?.color ?? '#0b3d91',
+          flowName: flow?.name,
+        }
+      })
+  }, [dependencies, visibleTasks, flowById])
+
+  const activeFlow = activeFlowId ? flowById.get(activeFlowId) : undefined
+
+  const chromeSummary = useMemo(() => {
+    const projectLabel =
+      projectFilter === 'all'
+        ? 'All projects'
+        : (projects.find((p) => p.id === projectFilter)?.name ?? 'Project')
+    const flowProject = activeFlow
+      ? projects.find((p) => p.id === activeFlow.projectId)?.name
+      : undefined
+    const flowLabel = activeFlow
+      ? flowProject
+        ? `${activeFlow.name} · ${flowProject}`
+        : activeFlow.name
+      : 'No flow selected'
+    return `${projectLabel} · ${flowLabel}`
+  }, [projectFilter, projects, activeFlow])
+
+  const days = useMemo(
+    () =>
+      eachDayOfInterval({
+        start: cursor,
+        end: addDays(cursor, daySpan - 1),
+      }).map((d) => format(d, 'yyyy-MM-dd')),
+    [cursor, daySpan],
+  )
+
+  const rangeLabel = useMemo(() => {
+    if (daySpan === 1) return format(cursor, 'EEEE, MMM d, yyyy')
+    const end = addDays(cursor, daySpan - 1)
+    return `${format(cursor, 'MMM d')} – ${format(end, 'MMM d, yyyy')}`
+  }, [cursor, daySpan])
+
+  function showToast(message: string) {
+    setToast(message)
+    window.setTimeout(() => setToast(null), 2400)
+  }
+
+  function defaultProjectId() {
+    if (projectFilter !== 'all') return projectFilter
+    if (activeFlow) return activeFlow.projectId
+    return projects[0]?.id ?? ''
+  }
+
+  function handleCreateTask(range: {
+    date: string
+    startHour: number
+    startMinute: number
+    endHour: number
+    endMinute: number
+  }) {
+    setEditingTask({
+      title: '',
+      notes: '',
+      projectId: defaultProjectId(),
+      segments: [
+        singleDaySegment(
+          range.date,
+          range.startHour,
+          range.startMinute,
+          range.endHour,
+          range.endMinute,
+        ),
+      ],
+    })
+  }
+
+  const handleMoveTask = useCallback(
+    (task: Task) => {
+      upsertTask(task)
+      showToast(`Moved “${task.title}”`)
+    },
+    [upsertTask],
+  )
+
+  const handleLinkTasks = useCallback(
+    (fromId: string, toId: string) => {
+      if (!activeFlowId) {
+        showToast('Select a flow before drawing arrows.')
+        return
+      }
+      const from = tasks.find((t) => t.id === fromId)
+      const to = tasks.find((t) => t.id === toId)
+      const flow = flows.find((f) => f.id === activeFlowId)
+      const result = addDependency(fromId, toId, activeFlowId)
+      if (!result.ok) showToast(result.reason)
+      else
+        showToast(
+          `Linked ${from?.title ?? 'task'} → ${to?.title ?? 'task'} on “${flow?.name ?? 'flow'}”`,
+        )
+    },
+    [tasks, flows, activeFlowId, addDependency],
+  )
+
+  const canDeleteEditingFlow = Boolean(
+    editingFlow?.id &&
+      flows.filter((f) => f.projectId === editingFlow.projectId).length > 1,
+  )
+
+  return (
+    <div className="app">
+      <header className="topbar">
+        <div className="brand">
+          <span className="brand__mark" aria-hidden="true" />
+          <div>
+            <h1 className="brand__name">Flowboard</h1>
+            <p className="brand__tag">Projects, flows, and dependencies</p>
+          </div>
+        </div>
+
+        <div className="topbar__controls">
+          <div className="view-switch" role="tablist" aria-label="Main view">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mainView === 'board'}
+              className={`view-switch__btn${mainView === 'board' ? ' view-switch__btn--active' : ''}`}
+              onClick={() => selectMainView('board')}
+            >
+              Board
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mainView === 'graph'}
+              className={`view-switch__btn${mainView === 'graph' ? ' view-switch__btn--active' : ''}`}
+              onClick={() => selectMainView('graph')}
+            >
+              Graph
+            </button>
+          </div>
+
+          {mainView === 'board' && (
+            <>
+              <div className="view-switch" role="tablist" aria-label="Number of days">
+                {DAY_SPANS.map((span) => (
+                  <button
+                    key={span}
+                    type="button"
+                    role="tab"
+                    aria-selected={daySpan === span}
+                    className={`view-switch__btn${daySpan === span ? ' view-switch__btn--active' : ''}`}
+                    onClick={() => setDaySpan(span)}
+                  >
+                    {span}d
+                  </button>
+                ))}
+              </div>
+
+              <div className="week-nav">
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={() => setCursor((d) => addDays(d, -daySpan))}
+                  aria-label="Previous range"
+                >
+                  ←
+                </button>
+                <span className="week-label">{rangeLabel}</span>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={() => setCursor((d) => addDays(d, daySpan))}
+                  aria-label="Next range"
+                >
+                  →
+                </button>
+              </div>
+            </>
+          )}
+
+          <span className="link-count" title="Visible dependency arrows">
+            {visibleDependencies.length} link
+            {visibleDependencies.length === 1 ? '' : 's'}
+          </span>
+
+          <button
+            type="button"
+            className="btn btn--ghost sync-btn"
+            onClick={() => setStorageOpen(true)}
+            title={syncError ?? 'Google Sheets sync'}
+          >
+            <span className={`sync-dot sync-dot--${syncStatus}`} aria-hidden="true" />
+            {syncStatus === 'local-only'
+              ? 'Local'
+              : syncStatus === 'saving'
+                ? 'Saving…'
+                : syncStatus === 'loading'
+                  ? 'Loading…'
+                  : syncStatus === 'error'
+                    ? 'Sync error'
+                    : 'Sheets'}
+          </button>
+
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() =>
+              setEditingTask({
+                title: '',
+                notes: '',
+                projectId: defaultProjectId(),
+                segments: [singleDaySegment(days[0], 9, 0)],
+              })
+            }
+          >
+            + New task
+          </button>
+
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => {
+              resetSample()
+              setDaySpan(7)
+              setProjectFilter('all')
+              setActiveFlowId(null)
+              setCursor(parseISO('2026-07-20'))
+              showToast(
+                sheetsUrl
+                  ? 'Sample board restored (will sync to Sheets)'
+                  : 'Sample board restored',
+              )
+            }}
+          >
+            Reset sample
+          </button>
+        </div>
+      </header>
+
+      <ChromePanel
+        minimized={chromeMinimized}
+        onToggle={toggleChromeMinimized}
+        summary={chromeSummary}
+      >
+        <ProjectBar
+          projects={projects}
+          selectedProjectId={projectFilter}
+          onSelect={setProjectFilter}
+          onNewProject={() =>
+            setEditingProject({
+              name: '',
+              color: PROJECT_COLORS[projects.length % PROJECT_COLORS.length],
+            })
+          }
+          onEditProject={(p) => setEditingProject(p)}
+        />
+
+        <FlowBar
+          flows={flows}
+          projects={projects}
+          activeFlowId={activeFlowId}
+          projectFilter={projectFilter}
+          onSelectFlow={setActiveFlowId}
+          onNewFlow={() =>
+            setEditingFlow({
+              name: '',
+              color: FLOW_COLORS[flows.length % FLOW_COLORS.length],
+              projectId: defaultProjectId(),
+            })
+          }
+          onEditFlow={(f) => setEditingFlow(f)}
+        />
+
+        <p className="hint">
+          {mainView === 'board' ? (
+            <>
+              Drag across empty 15‑minute cells to set a task’s start/end, or click
+              one cell for a 1‑hour default. Select a <strong>flow</strong>, then
+              drag → to link tasks.
+            </>
+          ) : (
+            <>
+              Graph shows day columns (only days with tasks) and dependency
+              arrows — no time rows. Click a task to edit or pick dependents.
+            </>
+          )}
+        </p>
+      </ChromePanel>
+
+      {mainView === 'board' ? (
+        <CalendarGrid
+          days={days}
+          tasks={visibleTasks}
+          dependencies={visibleDependencies}
+          activeFlowColor={activeFlow?.color}
+          activeFlowId={activeFlowId}
+          onCreateTask={handleCreateTask}
+          onTaskClick={(task) => setEditingTask(task)}
+          onMoveTask={handleMoveTask}
+          onLinkTasks={handleLinkTasks}
+          onRemoveDependency={(id) => {
+            removeDependency(id)
+            showToast('Dependency removed')
+          }}
+        />
+      ) : (
+        <DependencyGraph
+          tasks={visibleTasks}
+          dependencies={visibleDependencies}
+          activeFlowId={activeFlowId}
+          onTaskClick={(task) => setEditingTask(task)}
+          onRemoveDependency={(id) => {
+            removeDependency(id)
+            showToast('Dependency removed')
+          }}
+        />
+      )}
+
+      <TaskModal
+        open={Boolean(editingTask)}
+        initial={editingTask}
+        projects={projects}
+        tasks={tasks}
+        dependencies={dependencies}
+        flows={flows}
+        activeFlowId={activeFlowId}
+        onClose={() => setEditingTask(null)}
+        onSave={({ task, dependentIds, flowId }) => {
+          upsertTask(task)
+          let linkNote = ''
+          if (flowId) {
+            const plan = planDependentSync(
+              task.id,
+              flowId,
+              dependentIds,
+              dependencies,
+            )
+            let added = 0
+            let removed = 0
+            let failed = 0
+            for (const toId of plan.toAdd) {
+              const result = addDependency(task.id, toId, flowId)
+              if (result.ok) added += 1
+              else failed += 1
+            }
+            for (const depId of plan.toRemoveIds) {
+              removeDependency(depId)
+              removed += 1
+            }
+            if (added || removed || failed) {
+              const parts: string[] = []
+              if (added) parts.push(`${added} link${added === 1 ? '' : 's'} added`)
+              if (removed)
+                parts.push(`${removed} link${removed === 1 ? '' : 's'} removed`)
+              if (failed) parts.push(`${failed} skipped`)
+              linkNote = ` · ${parts.join(', ')}`
+            }
+          }
+          setEditingTask(null)
+          showToast(
+            `${editingTask?.id ? 'Task updated' : 'Task created'}${linkNote}`,
+          )
+        }}
+        onDelete={(id) => {
+          deleteTask(id)
+          setEditingTask(null)
+          showToast('Task deleted')
+        }}
+      />
+
+      <ProjectModal
+        open={Boolean(editingProject)}
+        initial={editingProject}
+        canDelete={projects.length > 1}
+        onClose={() => setEditingProject(null)}
+        onSave={(project) => {
+          upsertProject(project)
+          setEditingProject(null)
+          showToast(editingProject?.id ? 'Project updated' : 'Project created')
+        }}
+        onDelete={(id) => {
+          const result = deleteProject(id)
+          if (!result.ok) {
+            showToast(result.reason)
+            return
+          }
+          if (projectFilter === id) setProjectFilter('all')
+          setEditingProject(null)
+          showToast('Project deleted')
+        }}
+      />
+
+      <FlowModal
+        open={Boolean(editingFlow)}
+        initial={editingFlow}
+        projects={projects}
+        canDelete={canDeleteEditingFlow}
+        onClose={() => setEditingFlow(null)}
+        onSave={(flow) => {
+          upsertFlow(flow)
+          setActiveFlowId(flow.id)
+          setEditingFlow(null)
+          showToast(editingFlow?.id ? 'Flow updated' : 'Flow created')
+        }}
+        onDelete={(id) => {
+          const result = deleteFlow(id)
+          if (!result.ok) {
+            showToast(result.reason)
+            return
+          }
+          if (activeFlowId === id) setActiveFlowId(null)
+          setEditingFlow(null)
+          showToast('Flow deleted — its arrows moved to another flow')
+        }}
+      />
+
+      {storageOpen && (
+        <StorageModal
+          sheetsUrl={sheetsUrl}
+          calendarSync={calendarSync}
+          syncStatus={syncStatus}
+          syncError={syncError}
+          updatedAt={updatedAt}
+          onClose={() => setStorageOpen(false)}
+          onConnect={connectSheets}
+          onDisconnect={disconnectSheets}
+          onSetCalendarSync={setCalendarSync}
+          onPull={pullFromSheets}
+          onPush={pushToSheets}
+          onDeleteInvalidTasks={deleteInvalidTasks}
+        />
+      )}
+
+      {toast && (
+        <div className="toast" role="status">
+          {toast}
+        </div>
+      )}
+    </div>
+  )
+}
