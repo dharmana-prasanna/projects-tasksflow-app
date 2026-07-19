@@ -69,6 +69,36 @@ describe('REQ-UI-008 — Sticky date header (CSS contract)', () => {
   })
 })
 
+describe('REQ-UI-014 — Mobile board scrolling', () => {
+  const appCss = readCss('App.css')
+  const gridSrc = readFileSync(resolve(here, 'components/CalendarGrid.tsx'), 'utf8')
+
+  it('allows pan on both axes in the board scroller', () => {
+    expect(appCss).toMatch(
+      /\.board-scroll\s*\{[^}]*touch-action:\s*pan-x\s+pan-y/s,
+    )
+  })
+
+  it('keeps board/graph flex children shrinkable on iOS (flex-basis 0)', () => {
+    expect(appCss).toMatch(/\.board-shell\s*\{[^}]*flex:\s*1\s+1\s+0/s)
+    expect(appCss).toMatch(/\.board-scroll\s*\{[^}]*flex:\s*1\s+1\s+0/s)
+    expect(appCss).toMatch(/\.graph-view__scroll\s*\{[^}]*flex:\s*1\s+1\s+0/s)
+  })
+
+  it('does not set touch-action:none on idle task chips', () => {
+    const taskBlock = appCss.match(/\.task\s*\{[^}]*\}/s)?.[0] ?? ''
+    expect(taskBlock).toMatch(/^\s*touch-action:\s*manipulation\s*;/m)
+    expect(taskBlock).not.toMatch(/^\s*touch-action:\s*none\s*;/m)
+    expect(appCss).toMatch(/\.task--dragging\s*\{[^}]*touch-action:\s*none/s)
+  })
+
+  it('uses TouchSensor delay so swipe can scroll before drag', () => {
+    expect(gridSrc).toMatch(/TouchSensor/)
+    expect(gridSrc).toMatch(/MouseSensor/)
+    expect(gridSrc).toMatch(/delay:\s*220/)
+  })
+})
+
 describe('REQ-UI-009 / REQ-LOCAL-004 — Resizable day columns', () => {
   beforeEach(() => {
     localStorage.clear()

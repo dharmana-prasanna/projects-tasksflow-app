@@ -1,17 +1,28 @@
+# Flowboard — Netlify static site
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+
 [build]
   command = "npm run build"
   publish = "dist"
 
-# Set this in Netlify → Site configuration → Environment variables
-# (must be available at build time for Vite):
-#   VITE_SHEETS_SCRIPT_URL = https://script.google.com/macros/s/…/exec
-#
-# Or use the Netlify UI / CLI — do not commit secrets into this file.
-
 [build.environment]
   NODE_VERSION = "22"
+  # Vite reads this at build time — set the real value in Netlify UI
+  # (Site configuration → Environment variables), not here:
+  #   VITE_SHEETS_SCRIPT_URL = https://script.google.com/macros/s/…/exec
+  CI = "true"
+  # Speeds install; Playwright is not used in the production build
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
+  HUSKY = "0"
 
+# SPA fallback (Board / Graph are client-side)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Cache hashed Vite assets aggressively
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

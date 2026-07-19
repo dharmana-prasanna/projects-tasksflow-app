@@ -25,8 +25,13 @@ npm run pack:dist   # same, plus flowboard-dist.zip
 npm run preview     # serve dist/ locally
 ```
 
-Upload `dist/` (or the zip) to Netlify, Vercel, Cloudflare Pages, S3, or any static host.  
-See **[docs/DEPLOY.md](docs/DEPLOY.md)** for step-by-step hosting and Apps Script sync.
+### Netlify
+
+1. Import this repo in Netlify (`netlify.toml` is ready).
+2. Set env var **`VITE_SHEETS_SCRIPT_URL`** to your Apps Script `/exec` URL.
+3. Deploy — the **Sheets** sync button stays on the site.
+
+Step-by-step: **[docs/NETLIFY.md](docs/NETLIFY.md)** · general hosting: **[docs/DEPLOY.md](docs/DEPLOY.md)**
 
 ## Stack
 

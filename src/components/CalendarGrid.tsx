@@ -1,7 +1,8 @@
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -176,9 +177,13 @@ export function CalendarGrid({
     }
   }, [])
 
+  // Mouse: short distance drag. Touch: brief hold so iPhone can scroll the board first.
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 220, tolerance: 8 },
     }),
   )
 

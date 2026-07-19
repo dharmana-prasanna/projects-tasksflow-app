@@ -169,6 +169,12 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Day-span / date navigation controls are hidden while Graph is active.
 - Preferred main view persists under `flowboard-main-view` (`board` | `graph`).
 
+### REQ-UI-014 — Mobile board scrolling
+- On touch devices, the board scroller must accept **vertical and horizontal** pan gestures (`touch-action: pan-x pan-y`).
+- Task chips must **not** use `touch-action: none` at rest (that blocks scroll when the finger starts on a task); only while actively dragging.
+- Touch drag-and-drop uses a short activation delay so a normal swipe scrolls the board; mouse drag keeps a small distance threshold.
+- Board / graph scroll areas use a flex basis of `0` with `min-height: 0` so iOS Safari keeps them viewport-bounded and scrollable (page body stays `overflow: hidden`).
+
 ---
 
 ## 4. Persistence — local
@@ -270,7 +276,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 | Model migrate | REQ-LOCAL-002, REQ-MODEL-*                         | `src/storage/migrate.test.ts`                      |
 | Dependencies| REQ-DEP-001 … 005, REQ-MODEL-004                     | `src/domain/dependencies.test.ts`                  |
 | Slot select | REQ-TIME-007                                         | `src/time.test.ts` (`selectionToRange`)            |
-| Board layout| REQ-UI-008, REQ-UI-009, REQ-LOCAL-004                | `src/boardLayout.test.ts`                          |
+| Board layout| REQ-UI-008, REQ-UI-009, REQ-UI-014, REQ-LOCAL-004   | `src/boardLayout.test.ts`                          |
 | Dep arrows  | REQ-UI-010                                           | `src/domain/arrowGeometry.test.ts`                 |
 | Chrome panel| REQ-UI-011, REQ-LOCAL-005                            | `src/chromePrefs.test.ts`                          |
 | Graph view  | REQ-UI-012, REQ-LOCAL-006, REQ-LOCAL-007             | `src/domain/graphLayout.test.ts`, `src/viewPrefs.test.ts`, `src/domain/arrowGeometry.test.ts`, `src/graphCurvePrefs.test.ts` |
