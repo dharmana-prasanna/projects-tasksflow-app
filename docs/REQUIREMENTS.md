@@ -176,7 +176,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Board / graph scroll areas use a flex basis of `0` with `min-height: 0` so iOS Safari keeps them viewport-bounded and scrollable (page body stays `overflow: hidden`).
 
 ### REQ-AUTH-001 — Shared password gate config
-- Build-time env `VITE_APP_PASSWORD` configures a shared login password (trimmed).
+- Build-time env `VITE_FLOWBOARD_PASSWORD` configures a shared login password (trimmed).
 - Empty or unset password → **no login gate** (app opens immediately).
 - Non-empty password → visitors must unlock before seeing the board.
 - This is a **casual shared gate**: Vite embeds `VITE_*` values in client JS (not server-side auth).

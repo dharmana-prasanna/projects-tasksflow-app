@@ -28,7 +28,7 @@ npm run preview     # serve dist/ locally
 ### Netlify
 
 1. Import this repo in Netlify (`netlify.toml` is ready).
-2. Set env vars **`VITE_SHEETS_SCRIPT_URL`** (Apps Script `/exec` URL) and optionally **`VITE_APP_PASSWORD`** (shared login).
+2. Set env vars **`VITE_SHEETS_SCRIPT_URL`** (Apps Script `/exec` URL) and optionally **`VITE_FLOWBOARD_PASSWORD`** (shared login).
 3. Deploy — the **Sheets** sync button stays on the site; with a password set, visitors unlock first.
 
 Step-by-step: **[docs/NETLIFY.md](docs/NETLIFY.md)** · general hosting: **[docs/DEPLOY.md](docs/DEPLOY.md)**

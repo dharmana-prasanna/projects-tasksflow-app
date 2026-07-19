@@ -10,7 +10,7 @@ import { LoginScreen } from './LoginScreen'
 
 /**
  * Shared-password gate around the app.
- * When `VITE_APP_PASSWORD` is unset/empty, renders the app immediately.
+ * When `VITE_FLOWBOARD_PASSWORD` is unset/empty, renders the app immediately.
  */
 export function AuthGate() {
   const required = isAuthRequired()

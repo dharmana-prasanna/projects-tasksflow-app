@@ -8,7 +8,7 @@ export const AUTH_SESSION_KEY = 'flowboard-auth-session'
  * shared gate, not strong server-side authentication.
  */
 export function getAppPassword(
-  envPassword: string | undefined = import.meta.env.VITE_APP_PASSWORD,
+  envPassword: string | undefined = import.meta.env.VITE_FLOWBOARD_PASSWORD,
 ): string {
   return typeof envPassword === 'string' ? envPassword.trim() : ''
 }
