@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   AUTH_SESSION_KEY,
   clearSession,
-  getAppPassword,
   isAuthRequired,
   isUnlocked,
+  normalizeAppPassword,
   readSessionToken,
   sessionTokenFor,
   tryUnlock,
@@ -37,10 +37,12 @@ function memoryStorage(): Storage {
 
 describe('REQ-AUTH-001 — Shared password gate config', () => {
   it('trims configured password and treats empty as disabled', () => {
-    expect(getAppPassword('  secret  ')).toBe('secret')
-    expect(getAppPassword('')).toBe('')
-    expect(getAppPassword('   ')).toBe('')
-    expect(getAppPassword(undefined)).toBe('')
+    // Normalize is pure — do not call getAppPassword(undefined): that would
+    // fall through to import.meta.env and fail Netlify builds when the var is set.
+    expect(normalizeAppPassword('  secret  ')).toBe('secret')
+    expect(normalizeAppPassword('')).toBe('')
+    expect(normalizeAppPassword('   ')).toBe('')
+    expect(normalizeAppPassword(undefined)).toBe('')
     expect(isAuthRequired('')).toBe(false)
     expect(isAuthRequired('secret')).toBe(true)
   })

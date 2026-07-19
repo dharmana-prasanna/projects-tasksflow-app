@@ -2,15 +2,21 @@
 export const AUTH_SESSION_KEY = 'flowboard-auth-session'
 
 /**
+ * Normalize a password candidate (trim; undefined/non-string → empty).
+ * Pure helper — does not read env (so CI with `VITE_FLOWBOARD_PASSWORD` set is safe).
+ */
+export function normalizeAppPassword(raw: string | undefined): string {
+  return typeof raw === 'string' ? raw.trim() : ''
+}
+
+/**
  * Build-time shared password from Vite env.
  * Empty / unset → gate disabled (open app).
  * Note: Vite embeds `VITE_*` values in the client bundle — this is a casual
  * shared gate, not strong server-side authentication.
  */
-export function getAppPassword(
-  envPassword: string | undefined = import.meta.env.VITE_FLOWBOARD_PASSWORD,
-): string {
-  return typeof envPassword === 'string' ? envPassword.trim() : ''
+export function getAppPassword(): string {
+  return normalizeAppPassword(import.meta.env.VITE_FLOWBOARD_PASSWORD)
 }
 
 export function isAuthRequired(password = getAppPassword()): boolean {
