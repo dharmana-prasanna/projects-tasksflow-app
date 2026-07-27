@@ -34,12 +34,18 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Dependencies reference a `flowId`.
 
 ### REQ-MODEL-003 — Tasks and day segments
-- A task has `id`, `title`, `notes`, `projectId`, and `segments[]`.
+- A task has `id`, `title`, `notes`, `projectId`, `labels[]`, and `segments[]`.
 - A day segment has `date` (YYYY-MM-DD), `startHour`, `startMinute`, `endHour`, `endMinute`.
 - Minutes are quantized to **0 | 15 | 30 | 45**.
 - End time is **exclusive** on the 15-minute grid (e.g. 6:00–7:00 occupies 6:00, 6:15, 6:30, 6:45).
 - End-of-day may be represented as hour `24`, minute `0`.
 - A task may span multiple days via multiple segments; each day may have its own start/end.
+
+### REQ-MODEL-005 — Task labels
+- A task may have **zero or more labels** (`labels: string[]`).
+- Labels are normalized via `normalizeLabels` / `normalizeLabel`: trimmed, collapsed whitespace, max 32 chars, max 12 per task, case-insensitive dedupe (first spelling kept), sorted A–Z.
+- Missing / invalid labels migrate to `[]`.
+- Sheets stores labels on the Tasks tab as a comma-separated `labels` cell (JSON arrays also accepted on load).
 
 ### REQ-MODEL-004 — Dependencies
 - A dependency has `id`, `fromId`, `toId`, `flowId`.
@@ -112,10 +118,17 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Muted arrows are not deletable via click.
 
 ### REQ-UI-004 — Task create / edit
-- New task modal supports title, project, start/end dates, start/end times, notes.
+- New task modal supports title, project, **labels**, start/end dates, start/end times, notes.
+- Labels can be added (Enter / comma / Add) and removed as chips in the task editor.
 - Multi-day tasks show a per-day start/end editor.
 - Board create via slot select pre-fills segment times.
 - When editing an existing task, **Delete** sits in the **sticky modal header** (next to Close) so it stays reachable without scrolling on mobile; Cancel/Save remain in the footer.
+
+### REQ-UI-017 — Filter by labels
+- Chrome shows a **LabelBar** of known labels (from all tasks) plus **All labels**.
+- Selecting one or more label chips filters board/graph tasks to those matching **any** selected label (`taskMatchesLabelFilter`, OR).
+- **All labels** / **Clear labels** clears the filter (show all, still subject to project filter).
+- Project filter and label filter combine (AND across dimensions).
 
 ### REQ-UI-013 — Pick dependents in task editor
 - Task modal lists other existing tasks as **Dependent tasks** (multi-select checkboxes).
@@ -309,6 +322,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 |-------------|------------------------------------------------------|----------------------------------------------------|
 | Time grid   | REQ-TIME-001 … 008                                   | `src/time.test.ts`                                 |
 | Model migrate | REQ-LOCAL-002, REQ-MODEL-*                         | `src/storage/migrate.test.ts`                      |
+| Task labels | REQ-MODEL-005, REQ-UI-017                            | `src/domain/taskLabels.test.ts`                    |
 | Dependencies| REQ-DEP-001 … 005, REQ-MODEL-004                     | `src/domain/dependencies.test.ts`                  |
 | Slot select | REQ-TIME-007, REQ-UI-016                             | `src/time.test.ts`, `src/domain/slotSelectGesture.test.ts` |
 | Board layout| REQ-UI-008, REQ-UI-009, REQ-UI-014, REQ-UI-015, REQ-LOCAL-004 | `src/boardLayout.test.ts`                   |

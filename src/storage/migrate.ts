@@ -1,4 +1,5 @@
 import { FLOW_COLORS, PROJECT_COLORS, SAMPLE_STATE } from '../data/sample'
+import { normalizeLabels } from '../domain/taskLabels'
 import { normalizeMinute, singleDaySegment } from '../time'
 import type {
   DaySegment,
@@ -18,6 +19,7 @@ type LegacyTask = {
   notes?: string
   projectId?: string
   color?: string
+  labels?: unknown
   segments?: DaySegment[]
 }
 
@@ -62,6 +64,7 @@ function migrateTask(task: LegacyTask, fallbackProjectId: string, projectIds: Se
     title: task.title,
     notes: task.notes ?? '',
     projectId,
+    labels: normalizeLabels(task.labels),
     segments,
   }
 }

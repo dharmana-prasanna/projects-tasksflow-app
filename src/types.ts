@@ -26,6 +26,8 @@ export type Task = {
   title: string
   notes: string
   projectId: string
+  /** Free-form tags (normalized); used for filtering. */
+  labels: string[]
   segments: DaySegment[]
 }
 

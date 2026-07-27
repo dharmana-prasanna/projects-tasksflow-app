@@ -1,6 +1,12 @@
 import { format, parseISO } from 'date-fns'
 import { useEffect, useId, useMemo, useState } from 'react'
 import {
+  addTaskLabel,
+  collectAllLabels,
+  normalizeLabels,
+  removeTaskLabel,
+} from '../domain/taskLabels'
+import {
   currentDependentIds,
   eligibleDependentTasks,
   filterDependentTasks,
@@ -58,10 +64,14 @@ export function TaskModal({
   const [segments, setSegments] = useState<DaySegment[]>([])
   const [dependentIds, setDependentIds] = useState<string[]>([])
   const [dependentQuery, setDependentQuery] = useState('')
+  const [labels, setLabels] = useState<string[]>([])
+  const [labelDraft, setLabelDraft] = useState('')
 
   const activeFlow = activeFlowId
     ? flows.find((f) => f.id === activeFlowId)
     : undefined
+
+  const knownLabels = useMemo(() => collectAllLabels(tasks), [tasks])
 
   useEffect(() => {
     if (!open || !initial) return
@@ -69,6 +79,8 @@ export function TaskModal({
     setNotes(initial.notes ?? '')
     setProjectId(initial.projectId ?? projects[0]?.id ?? '')
     setDependentQuery('')
+    setLabels(normalizeLabels(initial.labels))
+    setLabelDraft('')
 
     const segs =
       initial.segments && initial.segments.length > 0
@@ -152,6 +164,7 @@ export function TaskModal({
       title: title.trim(),
       notes: notes.trim(),
       projectId,
+      labels: normalizeLabels(labels),
       segments: segments.map(normalizeSegment),
     }
     onSave({
@@ -226,6 +239,67 @@ export function TaskModal({
               </select>
             </div>
           </label>
+
+          <fieldset className="task-labels">
+            <legend>Labels</legend>
+            <p className="modal__tip">
+              Add one or more labels (Enter or comma). Use them to filter the board.
+            </p>
+            {labels.length > 0 && (
+              <div className="task-labels__chips" aria-label="Task labels">
+                {labels.map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className="label-chip label-chip--removable"
+                    onClick={() => setLabels((prev) => removeTaskLabel(prev, label))}
+                    title={`Remove ${label}`}
+                  >
+                    {label}
+                    <span aria-hidden="true"> ×</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="task-labels__add">
+              <input
+                type="text"
+                value={labelDraft}
+                list="flowboard-known-labels"
+                placeholder="e.g. travel, kids"
+                onChange={(e) => setLabelDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault()
+                    const next = addTaskLabel(labels, labelDraft.replace(/,$/, ''))
+                    setLabels(next)
+                    setLabelDraft('')
+                  }
+                }}
+                onBlur={() => {
+                  if (!labelDraft.trim()) return
+                  setLabels((prev) => addTaskLabel(prev, labelDraft))
+                  setLabelDraft('')
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => {
+                  if (!labelDraft.trim()) return
+                  setLabels((prev) => addTaskLabel(prev, labelDraft))
+                  setLabelDraft('')
+                }}
+              >
+                Add
+              </button>
+            </div>
+            <datalist id="flowboard-known-labels">
+              {knownLabels.map((l) => (
+                <option key={l} value={l} />
+              ))}
+            </datalist>
+          </fieldset>
 
           <div className="modal__row">
             <label>

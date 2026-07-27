@@ -52,6 +52,7 @@ export const SAMPLE_STATE: StoreState = {
       title: 'task1',
       notes: 'Kickoff',
       projectId: 'proj-alpha',
+      labels: ['planning', 'kickoff'],
       segments: [
         {
           date: '2026-07-20',
@@ -67,6 +68,7 @@ export const SAMPLE_STATE: StoreState = {
       title: 'task2',
       notes: '',
       projectId: 'proj-alpha',
+      labels: ['build'],
       segments: [
         {
           date: '2026-07-21',
@@ -82,6 +84,7 @@ export const SAMPLE_STATE: StoreState = {
       title: 'task3',
       notes: '',
       projectId: 'proj-alpha',
+      labels: [],
       segments: [
         {
           date: '2026-07-21',
@@ -97,6 +100,7 @@ export const SAMPLE_STATE: StoreState = {
       title: 'task4',
       notes: '',
       projectId: 'proj-alpha',
+      labels: [],
       segments: [
         {
           date: '2026-07-21',
@@ -112,6 +116,7 @@ export const SAMPLE_STATE: StoreState = {
       title: 'task5',
       notes: '',
       projectId: 'proj-beta',
+      labels: ['travel', 'multi-day'],
       segments: [
         {
           date: '2026-07-22',
@@ -134,6 +139,7 @@ export const SAMPLE_STATE: StoreState = {
       title: 'task6',
       notes: '',
       projectId: 'proj-beta',
+      labels: [],
       segments: [
         {
           date: '2026-07-24',

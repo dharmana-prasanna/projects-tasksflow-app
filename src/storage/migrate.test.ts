@@ -34,6 +34,33 @@ describe('REQ-LOCAL-002 / REQ-MODEL-* — Migration', () => {
         endMinute: 0,
       },
     ])
+    expect(state!.tasks[0].labels).toEqual([])
+  })
+
+  it('normalizes task labels on migrate', () => {
+    const state = migrate({
+      projects: [{ id: 'p1', name: 'Alpha', color: '#111' }],
+      flows: [{ id: 'f1', name: 'Main', color: '#222', projectId: 'p1' }],
+      tasks: [
+        {
+          id: 't1',
+          title: 'Labeled',
+          projectId: 'p1',
+          labels: [' Trip ', 'trip', 'food'],
+          segments: [
+            {
+              date: '2026-07-18',
+              startHour: 9,
+              startMinute: 0,
+              endHour: 10,
+              endMinute: 0,
+            },
+          ],
+        },
+      ],
+      dependencies: [],
+    })
+    expect(state!.tasks[0].labels).toEqual(['food', 'Trip'])
   })
 
   it('keeps and normalizes existing segments', () => {

@@ -142,10 +142,64 @@ function ensureSheet_(name, headers) {
   return sheet
 }
 
+/** Append a labels column on existing Tasks sheets created before labels existed. */
+function ensureTaskLabelsColumn_() {
+  var sheet = ss_().getSheetByName(SHEET_TASKS)
+  if (!sheet) return
+  var lastCol = Math.max(1, sheet.getLastColumn())
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String)
+  if (headers.indexOf('labels') === -1) {
+    sheet.getRange(1, headers.length + 1).setValue('labels')
+  }
+}
+
+function parseLabelsCell_(raw) {
+  if (raw === null || raw === undefined || raw === '') return []
+  var text = String(raw)
+  // Prefer JSON arrays when present
+  if (text.charAt(0) === '[') {
+    try {
+      var parsed = JSON.parse(text)
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map(function (x) {
+            return String(x).trim()
+          })
+          .filter(function (x) {
+            return x
+          })
+      }
+    } catch (err) {
+      /* fall through */
+    }
+  }
+  return text
+    .split(/[,;]/)
+    .map(function (x) {
+      return String(x).trim()
+    })
+    .filter(function (x) {
+      return x
+    })
+}
+
+function formatLabelsCell_(labels) {
+  if (!labels || !labels.length) return ''
+  return labels
+    .map(function (x) {
+      return String(x).trim()
+    })
+    .filter(function (x) {
+      return x
+    })
+    .join(', ')
+}
+
 function ensureAll_() {
   ensureSheet_(SHEET_PROJECTS, ['id', 'name', 'color'])
   ensureSheet_(SHEET_FLOWS, ['id', 'name', 'color', 'projectId'])
-  ensureSheet_(SHEET_TASKS, ['id', 'title', 'notes', 'projectId'])
+  ensureSheet_(SHEET_TASKS, ['id', 'title', 'notes', 'projectId', 'labels'])
+  ensureTaskLabelsColumn_()
   ensureSheet_(SHEET_SEGS, [
     'taskId',
     'date',
@@ -353,6 +407,7 @@ function loadState_() {
       title: String(r.title || ''),
       notes: String(r.notes || ''),
       projectId: String(r.projectId || ''),
+      labels: parseLabelsCell_(r.labels),
       segments: segments,
     })
   }
@@ -411,6 +466,7 @@ function saveState_(state, opts) {
       title: task.title,
       notes: task.notes || '',
       projectId: task.projectId,
+      labels: task.labels || [],
       segments: segs,
     })
     for (var s = 0; s < segs.length; s++) {
@@ -456,6 +512,7 @@ function saveState_(state, opts) {
       'title',
       'notes',
       'projectId',
+      'labels',
       'date',
       'hour',
       'minute',
@@ -469,6 +526,7 @@ function saveState_(state, opts) {
         title: t.title,
         notes: t.notes || '',
         projectId: t.projectId,
+        labels: formatLabelsCell_(t.labels),
         date: first ? String(first.date) : '',
         hour: first ? first.startHour : '',
         minute: first ? first.startMinute : '',

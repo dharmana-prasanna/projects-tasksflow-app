@@ -297,6 +297,99 @@
   color: #fff;
 }
 
+.label-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.label-bar--empty {
+  justify-content: flex-start;
+}
+
+.label-bar__hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.label-bar__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.label-chip {
+  appearance: none;
+  border: 1px dashed var(--line);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.label-chip:hover {
+  color: var(--ink);
+  background: #fff;
+  border-style: solid;
+}
+
+.label-chip--active {
+  background: #1d4e89;
+  border-color: #1d4e89;
+  border-style: solid;
+  color: #fff;
+}
+
+.label-chip--removable {
+  border-style: solid;
+  color: var(--ink);
+  background: rgba(29, 78, 137, 0.08);
+  border-color: rgba(29, 78, 137, 0.25);
+}
+
+.task-labels {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 0.7rem;
+  background: rgba(255, 255, 255, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.task-labels legend {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 0 0.25rem;
+}
+
+.task-labels__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.task-labels__add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.task-labels__add input {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
 .project-dot {
   width: 0.65rem;
   height: 0.65rem;

@@ -7,6 +7,7 @@ import {
 } from './chromePrefs'
 import { CalendarGrid } from './components/CalendarGrid'
 import { ChromePanel } from './components/ChromePanel'
+import { LabelBar } from './components/LabelBar'
 import type { ColoredDependency } from './components/DependencyArrows'
 import { DependencyGraph } from './components/DependencyGraph'
 import { FlowBar } from './components/FlowBar'
@@ -16,6 +17,11 @@ import { ProjectModal } from './components/ProjectModal'
 import { StorageModal } from './components/StorageModal'
 import { TaskModal } from './components/TaskModal'
 import { FLOW_COLORS, PROJECT_COLORS } from './data/sample'
+import {
+  collectAllLabels,
+  taskMatchesLabelFilter,
+  toggleLabelFilter,
+} from './domain/taskLabels'
 import { planDependentSync } from './domain/taskDependents'
 import { useTaskStore } from './hooks/useTaskStore'
 import { singleDaySegment } from './time'
@@ -61,6 +67,7 @@ export default function App({ onLock }: AppProps) {
   const [daySpan, setDaySpan] = useState<(typeof DAY_SPANS)[number]>(7)
   const [cursor, setCursor] = useState(() => parseISO('2026-07-20'))
   const [projectFilter, setProjectFilter] = useState<string | 'all'>('all')
+  const [labelFilter, setLabelFilter] = useState<string[]>([])
   const [activeFlowId, setActiveFlowId] = useState<string | null>(null)
   const [chromeMinimized, setChromeMinimized] = useState(loadChromeMinimized)
 
@@ -118,13 +125,15 @@ export default function App({ onLock }: AppProps) {
     [tasks, projectColor],
   )
 
-  const visibleTasks = useMemo(
-    () =>
+  const allLabels = useMemo(() => collectAllLabels(tasks), [tasks])
+
+  const visibleTasks = useMemo(() => {
+    const byProject =
       projectFilter === 'all'
         ? coloredTasks
-        : coloredTasks.filter((t) => t.projectId === projectFilter),
-    [coloredTasks, projectFilter],
-  )
+        : coloredTasks.filter((t) => t.projectId === projectFilter)
+    return byProject.filter((t) => taskMatchesLabelFilter(t, labelFilter))
+  }, [coloredTasks, projectFilter, labelFilter])
 
   const visibleDependencies: ColoredDependency[] = useMemo(() => {
     const ids = new Set(visibleTasks.map((t) => t.id))
@@ -155,8 +164,14 @@ export default function App({ onLock }: AppProps) {
         ? `${activeFlow.name} · ${flowProject}`
         : activeFlow.name
       : 'No flow selected'
-    return `${projectLabel} · ${flowLabel}`
-  }, [projectFilter, projects, activeFlow])
+    const labelsLabel =
+      labelFilter.length === 0
+        ? 'All labels'
+        : labelFilter.length === 1
+          ? labelFilter[0]
+          : `${labelFilter.length} labels`
+    return `${projectLabel} · ${flowLabel} · ${labelsLabel}`
+  }, [projectFilter, projects, activeFlow, labelFilter])
 
   const days = useMemo(
     () =>
@@ -195,6 +210,7 @@ export default function App({ onLock }: AppProps) {
       title: '',
       notes: '',
       projectId: defaultProjectId(),
+      labels: [],
       segments: [
         singleDaySegment(
           range.date,
@@ -320,6 +336,7 @@ export default function App({ onLock }: AppProps) {
                     title: '',
                     notes: '',
                     projectId: defaultProjectId(),
+                    labels: [],
                     segments: [singleDaySegment(days[0], 9, 0)],
                   })
                 }
@@ -338,6 +355,7 @@ export default function App({ onLock }: AppProps) {
                   resetSample()
                   setDaySpan(7)
                   setProjectFilter('all')
+                  setLabelFilter([])
                   setActiveFlowId(null)
                   setCursor(parseISO('2026-07-20'))
                   showToast(
@@ -430,6 +448,15 @@ export default function App({ onLock }: AppProps) {
             })
           }
           onEditProject={(p) => setEditingProject(p)}
+        />
+
+        <LabelBar
+          labels={allLabels}
+          selected={labelFilter}
+          onToggle={(label) =>
+            setLabelFilter((prev) => toggleLabelFilter(prev, label))
+          }
+          onClear={() => setLabelFilter([])}
         />
 
         <FlowBar
