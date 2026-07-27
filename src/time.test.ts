@@ -96,13 +96,13 @@ describe('REQ-TIME-003 — Segment occupancy', () => {
 })
 
 describe('REQ-TIME-004 — Single-day segment helpers', () => {
-  it('defaults to 1 hour when end omitted', () => {
+  it('defaults to 15 minutes when end omitted', () => {
     expect(singleDaySegment('2026-07-18', 9, 0)).toEqual({
       date: '2026-07-18',
       startHour: 9,
       startMinute: 0,
-      endHour: 10,
-      endMinute: 0,
+      endHour: 9,
+      endMinute: 15,
     })
   })
 
@@ -260,13 +260,13 @@ describe('REQ-TIME-006 — Move task', () => {
 })
 
 describe('REQ-TIME-007 — Slot multi-select → create range', () => {
-  it('one cell → 1 hour (4 slots)', () => {
+  it('one cell → 15 minutes (1 slot)', () => {
     // 09:00 is index 36
     expect(selectionToRange(36, 36)).toEqual({
       startHour: 9,
       startMinute: 0,
-      endHour: 10,
-      endMinute: 0,
+      endHour: 9,
+      endMinute: 15,
     })
   })
 

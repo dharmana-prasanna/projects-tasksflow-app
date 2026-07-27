@@ -115,8 +115,8 @@ export function TaskModal({
                 date: format(new Date(), 'yyyy-MM-dd'),
                 startHour: 9,
                 startMinute: 0,
-                endHour: 10,
-                endMinute: 0,
+                endHour: 9,
+                endMinute: 15,
               },
             ]
       const sorted = [...segs].sort((a, b) => a.date.localeCompare(b.date))
@@ -202,8 +202,8 @@ export function TaskModal({
       date: today,
       startHour: 9,
       startMinute: 0,
-      endHour: 10,
-      endMinute: 0,
+      endHour: 9,
+      endMinute: 15,
     }
     setSegments([seg])
     setStartDate(today)

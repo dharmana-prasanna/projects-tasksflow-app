@@ -8,7 +8,7 @@ describe('REQ-LOCAL-002 / REQ-MODEL-* — Migration', () => {
     expect(migrate({ tasks: [] })).toBeNull()
   })
 
-  it('converts legacy date/hour/minute to a 1-hour segment', () => {
+  it('converts legacy date/hour/minute to a 15-minute segment', () => {
     const state = migrate({
       projects: [{ id: 'p1', name: 'Alpha', color: '#111' }],
       flows: [{ id: 'f1', name: 'Main', color: '#222', projectId: 'p1' }],
@@ -30,8 +30,8 @@ describe('REQ-LOCAL-002 / REQ-MODEL-* — Migration', () => {
         date: '2026-07-18',
         startHour: 9,
         startMinute: 0,
-        endHour: 10,
-        endMinute: 0,
+        endHour: 9,
+        endMinute: 15,
       },
     ])
     expect(state!.tasks[0].labels).toEqual([])

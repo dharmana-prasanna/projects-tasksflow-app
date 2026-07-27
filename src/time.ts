@@ -105,8 +105,8 @@ export function primarySegment(task: Task): DaySegment {
       date: format(new Date(), 'yyyy-MM-dd'),
       startHour: 9,
       startMinute: 0,
-      endHour: 10,
-      endMinute: 0,
+      endHour: 9,
+      endMinute: 15,
     }
   )
 }
@@ -179,9 +179,10 @@ export function singleDaySegment(
   endMinute?: number,
 ): DaySegment {
   const start = slotIndex(startHour, startMinute)
+  const defaultEnd = Math.min(96, start + 1)
   const end =
-    endHour != null ? slotIndex(endHour, endMinute ?? 0) : Math.min(96, start + 4)
-  const e = slotFromIndex(end <= start ? Math.min(96, start + 4) : end)
+    endHour != null ? slotIndex(endHour, endMinute ?? 0) : defaultEnd
+  const e = slotFromIndex(end <= start ? defaultEnd : end)
   return normalizeSegment({
     date,
     startHour,
@@ -250,7 +251,7 @@ export const END_TIME_SLOTS: TimeSlot[] = [
 
 /**
  * Convert a board multi-select (inclusive slot indices) into a create range.
- * One cell → 1 hour; multiple cells → exact span (end exclusive).
+ * One cell → 15 minutes; multiple cells → exact span (end exclusive).
  */
 export function selectionToRange(
   anchorIndex: number,
@@ -263,7 +264,7 @@ export function selectionToRange(
 } {
   const lo = Math.min(anchorIndex, focusIndex)
   const hi = Math.max(anchorIndex, focusIndex)
-  const endIndex = hi === lo ? Math.min(96, lo + 4) : hi + 1
+  const endIndex = hi === lo ? Math.min(96, lo + 1) : hi + 1
   const start = slotFromIndex(lo)
   const end = slotFromIndex(endIndex)
   return {

@@ -75,7 +75,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - `isSegmentStart` is true only for the segment’s start slot.
 
 ### REQ-TIME-004 — Single-day segment helpers
-- `singleDaySegment(date, startH, startM)` without end defaults to **1 hour**.
+- `singleDaySegment(date, startH, startM)` without end defaults to **15 minutes**.
 - Providing end hour/minute uses that exclusive end (normalized).
 
 ### REQ-TIME-005 — Multi-day segment sync
@@ -90,7 +90,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 
 ### REQ-TIME-007 — Slot multi-select → create range
 - Dragging across continuous empty cells on the **same day** selects inclusive slots.
-- One cell → create range of **1 hour** (4 slots).
+- One cell → create range of **15 minutes** (1 slot).
 - Multiple cells → create range from first selected slot through exclusive end after the last selected slot.
 - Selection cannot cross days.
 
@@ -251,7 +251,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Loader migrates from older keys v1–v5 when present.
 
 ### REQ-LOCAL-002 — Migration
-- Legacy tasks with `date`/`hour`/`minute` convert to a single day segment (default 1 hour if no end).
+- Legacy tasks with `date`/`hour`/`minute` convert to a single day segment (default 15 minutes if no end).
 - Legacy tasks with `segments` keep normalized segments.
 - Missing project/flow ids are repaired with fallbacks.
 - Projects without a flow receive a default “Main flow”.
