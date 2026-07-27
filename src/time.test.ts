@@ -237,7 +237,7 @@ describe('REQ-TIME-006 — Move task', () => {
     })
   })
 
-  it('creates a 1-hour segment when task has no segments', () => {
+  it('creates a 15-minute segment when task has no segments (backlog drop)', () => {
     const task: Task = {
       id: 't2',
       title: 'Empty',
@@ -252,8 +252,8 @@ describe('REQ-TIME-006 — Move task', () => {
         date: '2026-07-18',
         startHour: 8,
         startMinute: 15,
-        endHour: 9,
-        endMinute: 15,
+        endHour: 8,
+        endMinute: 30,
       },
     ])
   })

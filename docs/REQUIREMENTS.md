@@ -85,6 +85,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 
 ### REQ-TIME-006 — Move task
 - `moveTaskToSlot` shifts the whole task so the earliest segment starts at the drop slot.
+- Dropping an **unscheduled** task (`segments: []`) onto a slot creates a **15-minute** segment at that cell (not 1 hour).
 - Relative day offsets and per-segment durations are preserved (clamped within the day).
 
 ### REQ-TIME-007 — Slot multi-select → create range
@@ -133,7 +134,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Backlog tasks are **grouped by label** (`groupUnscheduledByLabel`); multi-label tasks appear under each label; tasks with no labels under **Unlabeled** (last). Groups are scrollable with sticky group headers.
 - Users can **hide/show** the rail (`▹` / vertical Backlog tab); preference persists in `flowboard-backlog-hidden` (REQ-LOCAL-008). Collapsed rail remains a drop target and shows the backlog count.
 - Users can add backlog tasks from the panel (`+`) without assigning dates/times.
-- In **Board** view, backlog cards are draggable onto calendar slots (same `DndContext` as the board). Drop calls `moveTaskToSlot` (creates a 1-hour segment) and upserts — the task leaves the backlog and appears on the calendar.
+- In **Board** view, backlog cards are draggable onto calendar slots (same `DndContext` as the board). Drop calls `moveTaskToSlot` (creates a **15-minute** segment) and upserts — the task leaves the backlog and appears on the calendar.
 - In **Board** view, scheduled calendar tasks can be dragged **back onto the Backlog** drop target (`BACKLOG_DROP_ID`); drop calls `unscheduleTask` (clears `segments` to `[]`) so the task leaves the calendar and appears in the backlog.
 - In **Graph** view the same backlog list is shown for browse/add/edit; drag-to-schedule onto day columns is board-only (switch to Board to drop onto time slots).
 - Clicking a backlog card opens the task editor.

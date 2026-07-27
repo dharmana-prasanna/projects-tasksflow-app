@@ -200,7 +200,15 @@ export function moveTaskToSlot(
 ): Task {
   const sorted = [...task.segments].sort((a, b) => a.date.localeCompare(b.date))
   if (sorted.length === 0) {
-    return { ...task, segments: [singleDaySegment(date, hour, minute)] }
+    // Backlog → board: default to one 15-minute slot at the drop cell.
+    const start = slotIndex(hour, minute)
+    const end = slotFromIndex(Math.min(96, start + 1))
+    return {
+      ...task,
+      segments: [
+        singleDaySegment(date, hour, minute, end.hour, end.minute),
+      ],
+    }
   }
 
   const first = sorted[0]
