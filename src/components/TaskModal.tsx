@@ -2,7 +2,8 @@ import { format, parseISO } from 'date-fns'
 import { useEffect, useId, useMemo, useState } from 'react'
 import {
   addTaskLabel,
-  collectAllLabels,
+  labelNames,
+  normalizeLabel,
   normalizeLabels,
   removeTaskLabel,
 } from '../domain/taskLabels'
@@ -21,13 +22,22 @@ import {
   syncSegmentsForRange,
   TIME_SLOTS,
 } from '../time'
-import type { DaySegment, Dependency, Flow, Project, Task } from '../types'
+import type {
+  DaySegment,
+  Dependency,
+  Flow,
+  LabelDef,
+  Project,
+  Task,
+} from '../types'
 
 export type TaskSavePayload = {
   task: Task
   /** Desired dependents (toIds) on the active flow for this task as fromId. */
   dependentIds: string[]
   flowId: string | null
+  /** Descriptions for labels on this task (catalog upsert). */
+  labelMeta: LabelDef[]
 }
 
 type Props = {
@@ -35,12 +45,15 @@ type Props = {
   initial: Partial<Task> | null
   projects: Project[]
   tasks: Task[]
+  labelCatalog: LabelDef[]
   dependencies: Dependency[]
   flows: Flow[]
   activeFlowId: string | null
   onClose: () => void
   onSave: (payload: TaskSavePayload) => void
   onDelete?: (taskId: string) => void
+  /** Click a label chip to list matching tasks on the board. */
+  onShowLabel?: (label: string) => void
 }
 
 export function TaskModal({
@@ -48,12 +61,14 @@ export function TaskModal({
   initial,
   projects,
   tasks,
+  labelCatalog,
   dependencies,
   flows,
   activeFlowId,
   onClose,
   onSave,
   onDelete,
+  onShowLabel,
 }: Props) {
   const titleId = useId()
   const [title, setTitle] = useState('')
@@ -71,7 +86,7 @@ export function TaskModal({
     ? flows.find((f) => f.id === activeFlowId)
     : undefined
 
-  const knownLabels = useMemo(() => collectAllLabels(tasks), [tasks])
+  const knownLabels = useMemo(() => labelNames(labelCatalog), [labelCatalog])
 
   useEffect(() => {
     if (!open || !initial) return
@@ -156,21 +171,34 @@ export function TaskModal({
     )
   }
 
+  function commitLabelDraft() {
+    const name = normalizeLabel(labelDraft.replace(/,$/, ''))
+    if (!name) return
+    setLabels((prev) => addTaskLabel(prev, name))
+    setLabelDraft('')
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !projectId || segments.length === 0) return
+    const normalized = normalizeLabels(labels)
     const task: Task = {
       id: initial!.id ?? crypto.randomUUID(),
       title: title.trim(),
       notes: notes.trim(),
       projectId,
-      labels: normalizeLabels(labels),
+      labels: normalized,
       segments: segments.map(normalizeSegment),
     }
+    const labelMeta: LabelDef[] = normalized.map((name) => ({
+      name,
+      description: '',
+    }))
     onSave({
       task,
       dependentIds,
       flowId: activeFlowId,
+      labelMeta,
     })
   }
 
@@ -241,17 +269,30 @@ export function TaskModal({
           </label>
 
           <fieldset className="task-labels">
-            <legend>Labels</legend>
-            <p className="modal__tip">
-              Add one or more labels (Enter or comma). Use the × to unlink from
-              this task only — click a label in the bar above to list matching
-              tasks.
-            </p>
+            <legend className="task-labels__legend">
+              Labels
+              <span
+                className="field-help"
+                title="Click a label to list matching tasks on the board. Use × to unlink from this task only — that does not delete the label."
+                aria-label="Click a label to list matching tasks on the board. Use × to unlink from this task only — that does not delete the label."
+              >
+                ?
+              </span>
+            </legend>
             {labels.length > 0 && (
               <div className="task-labels__chips" aria-label="Task labels">
                 {labels.map((label) => (
-                  <span key={label} className="label-chip-wrap label-chip-wrap--static">
-                    <span className="label-chip label-chip--removable">{label}</span>
+                  <span
+                    key={label}
+                    className="label-chip-wrap label-chip-wrap--static"
+                  >
+                    <button
+                      type="button"
+                      className="label-chip label-chip--removable"
+                      onClick={() => onShowLabel?.(label)}
+                    >
+                      {label}
+                    </button>
                     <button
                       type="button"
                       className="label-chip__delete"
@@ -277,25 +318,14 @@ export function TaskModal({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ',') {
                     e.preventDefault()
-                    const next = addTaskLabel(labels, labelDraft.replace(/,$/, ''))
-                    setLabels(next)
-                    setLabelDraft('')
+                    commitLabelDraft()
                   }
-                }}
-                onBlur={() => {
-                  if (!labelDraft.trim()) return
-                  setLabels((prev) => addTaskLabel(prev, labelDraft))
-                  setLabelDraft('')
                 }}
               />
               <button
                 type="button"
                 className="btn btn--ghost"
-                onClick={() => {
-                  if (!labelDraft.trim()) return
-                  setLabels((prev) => addTaskLabel(prev, labelDraft))
-                  setLabelDraft('')
-                }}
+                onClick={commitLabelDraft}
               >
                 Add
               </button>

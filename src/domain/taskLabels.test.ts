@@ -4,14 +4,19 @@ import {
   canDeleteLabel,
   collectAllLabels,
   countTasksWithLabel,
+  getLabelDescription,
+  labelTooltip,
   mergeLabelCatalog,
   normalizeLabel,
+  normalizeLabelDefs,
   normalizeLabels,
   parseLabelsInput,
   removeFromLabelCatalog,
   removeTaskLabel,
+  selectLabelFilter,
   taskMatchesLabelFilter,
   toggleLabelFilter,
+  upsertLabelDef,
 } from './taskLabels'
 
 describe('REQ-MODEL-005 / REQ-UI-017 — Task labels', () => {
@@ -57,16 +62,45 @@ describe('REQ-MODEL-005 / REQ-UI-017 — Task labels', () => {
     expect(toggleLabelFilter(['Trip', 'food'], 'trip')).toEqual(['food'])
   })
 
+  it('selectLabelFilter replaces selection with one label', () => {
+    expect(selectLabelFilter('  Travel ')).toEqual(['Travel'])
+    expect(selectLabelFilter('   ')).toEqual([])
+  })
+
   it('add/remove task labels', () => {
     expect(addTaskLabel(['a'], 'B')).toEqual(['a', 'B'])
     expect(addTaskLabel(['a'], 'A')).toEqual(['a'])
     expect(removeTaskLabel(['a', 'b'], 'A')).toEqual(['b'])
   })
 
-  it('mergeLabelCatalog keeps unused catalog names', () => {
+  it('mergeLabelCatalog keeps unused catalog names and descriptions', () => {
     expect(
-      mergeLabelCatalog(['orphan', 'Trip'], [{ labels: ['trip', 'food'] }]),
-    ).toEqual(['food', 'orphan', 'Trip'])
+      mergeLabelCatalog(
+        [{ name: 'orphan', description: 'Unused tag' }, 'Trip'],
+        [{ labels: ['trip', 'food'] }],
+      ),
+    ).toEqual([
+      { name: 'food', description: '' },
+      { name: 'orphan', description: 'Unused tag' },
+      { name: 'Trip', description: '' },
+    ])
+  })
+
+  it('normalizeLabelDefs / upsertLabelDef keep descriptions', () => {
+    expect(
+      normalizeLabelDefs(['a', { name: 'b', description: 'Bee' }]),
+    ).toEqual([
+      { name: 'a', description: '' },
+      { name: 'b', description: 'Bee' },
+    ])
+    const next = upsertLabelDef(
+      [{ name: 'Trip', description: 'old' }],
+      'trip',
+      'Trip-related work',
+    )
+    expect(next).toEqual([{ name: 'Trip', description: 'Trip-related work' }])
+    expect(getLabelDescription(next, 'TRIP')).toBe('Trip-related work')
+    expect(labelTooltip(next, 'Trip', 2)).toBe('Trip-related work')
   })
 
   it('countTasksWithLabel / canDeleteLabel guard deletes', () => {
@@ -78,8 +112,14 @@ describe('REQ-MODEL-005 / REQ-UI-017 — Task labels', () => {
     expect(countTasksWithLabel(tasks, 'trip')).toBe(1)
     expect(canDeleteLabel(tasks, 'Trip')).toBe(false)
     expect(canDeleteLabel(tasks, 'orphan')).toBe(true)
-    expect(removeFromLabelCatalog(['Trip', 'orphan'], 'orphan')).toEqual([
-      'Trip',
-    ])
+    expect(
+      removeFromLabelCatalog(
+        [
+          { name: 'Trip', description: '' },
+          { name: 'orphan', description: 'x' },
+        ],
+        'orphan',
+      ),
+    ).toEqual([{ name: 'Trip', description: '' }])
   })
 })

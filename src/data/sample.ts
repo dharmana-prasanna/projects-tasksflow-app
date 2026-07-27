@@ -157,7 +157,13 @@ export const SAMPLE_STATE: StoreState = {
     { id: 'dep2', fromId: 'task1', toId: 'task3', flowId: 'flow-branch' },
     { id: 'dep4', fromId: 'task5', toId: 'task6', flowId: 'flow-ops' },
   ],
-  labels: ['build', 'kickoff', 'multi-day', 'planning', 'travel'],
+  labels: [
+    { name: 'build', description: '' },
+    { name: 'kickoff', description: '' },
+    { name: 'multi-day', description: '' },
+    { name: 'planning', description: '' },
+    { name: 'travel', description: '' },
+  ],
 }
 
 /** @deprecated use PROJECT_COLORS */

@@ -43,10 +43,10 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 
 ### REQ-MODEL-005 — Task labels
 - A task may have **zero or more labels** (`labels: string[]`).
-- The board keeps a **label catalog** on `StoreState.labels` (union of known names). Catalog entries remain after the last task unlinks them until explicitly deleted.
+- The board keeps a **label catalog** on `StoreState.labels` as `LabelDef[]` (`{ name, description }`). Catalog entries remain after the last task unlinks them until explicitly deleted.
 - Labels are normalized via `normalizeLabels` / `normalizeLabel`: trimmed, collapsed whitespace, max 32 chars, max 12 per task, case-insensitive dedupe (first spelling kept), sorted A–Z.
-- Missing / invalid task labels migrate to `[]`; catalog is rebuilt via `mergeLabelCatalog`.
-- Sheets stores per-task labels on the Tasks tab as a comma-separated `labels` cell, and the catalog in Meta key `labelCatalog` (JSON array).
+- Missing / invalid task labels migrate to `[]`; catalog is rebuilt via `mergeLabelCatalog` (legacy string catalogs accepted).
+- Sheets stores per-task labels on the Tasks tab as a comma-separated `labels` cell, and the catalog in Meta key `labelCatalog` (JSON `LabelDef[]` or legacy string array).
 - **Delete catalog label** (`deleteLabel` / `canDeleteLabel`) is allowed only when **no task** still uses that label (`countTasksWithLabel === 0`). If any task is linked, delete is refused.
 
 ### REQ-MODEL-004 — Dependencies
@@ -128,9 +128,10 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 
 ### REQ-UI-017 — Filter by labels
 - Chrome shows a **LabelBar** of catalog labels plus **All labels**.
-- **Clicking a label chip filters** the board/graph to tasks matching **any** selected label (`taskMatchesLabelFilter`, OR) and shows a **list of matching task titles** under the bar. Clicking a label must not delete it.
+- **Clicking a label** (bar or task editor chip) selects that label (`selectLabelFilter`), filters the board/graph, expands chrome if minimized, and shows matching task titles in a **LabelFilterBanner** (always visible while filtered). Clicking a label must not delete/unlink it.
+- Matching task titles are clickable to open the task editor.
 - Each chip shows a usage count; **×** deletes from the catalog only when unused. If tasks still use it, delete is refused, the filter selects that label (so the task list appears), and a toast explains why.
-- In the task editor, **×** only unlinks the label from **that task** (never deletes the catalog entry by itself).
+- In the task editor, the Labels help copy is a **tooltip** on a compact `?` control (not a paragraph), to save space. Label name click lists matching tasks; **×** only unlinks from **that task**.
 - **All labels** / **Clear labels** clears the filter (show all, still subject to project filter).
 - Project filter and label filter combine (AND across dimensions).
 

@@ -425,9 +425,28 @@ function loadState_() {
   if (catalogRaw) {
     try {
       var parsedCatalog = JSON.parse(catalogRaw)
-      if (Array.isArray(parsedCatalog)) catalog = parsedCatalog
+      if (Array.isArray(parsedCatalog)) {
+        for (var pi = 0; pi < parsedCatalog.length; pi++) {
+          var entry = parsedCatalog[pi]
+          if (typeof entry === 'string') {
+            var sn = String(entry).trim()
+            if (sn) catalog.push({ name: sn, description: '' })
+          } else if (entry && typeof entry === 'object') {
+            var en = String(entry.name || '').trim()
+            if (en) {
+              catalog.push({
+                name: en,
+                description: String(entry.description || '').trim(),
+              })
+            }
+          }
+        }
+      }
     } catch (err) {
-      catalog = parseLabelsCell_(catalogRaw)
+      var legacyNames = parseLabelsCell_(catalogRaw)
+      for (var ln = 0; ln < legacyNames.length; ln++) {
+        catalog.push({ name: legacyNames[ln], description: '' })
+      }
     }
   }
   // Always include labels currently on tasks
@@ -438,12 +457,12 @@ function loadState_() {
       if (!name) continue
       var found = false
       for (var ci = 0; ci < catalog.length; ci++) {
-        if (String(catalog[ci]).toLowerCase() === name.toLowerCase()) {
+        if (String(catalog[ci].name).toLowerCase() === name.toLowerCase()) {
           found = true
           break
         }
       }
-      if (!found) catalog.push(name)
+      if (!found) catalog.push({ name: name, description: '' })
     }
   }
 

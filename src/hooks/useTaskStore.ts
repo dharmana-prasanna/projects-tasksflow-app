@@ -27,8 +27,9 @@ import {
   mergeLabelCatalog,
   normalizeLabel,
   removeFromLabelCatalog,
+  upsertLabelDef,
 } from '../domain/taskLabels'
-import type { Dependency, Flow, Project, StoreState, Task } from '../types'
+import type { Dependency, Flow, LabelDef, Project, StoreState, Task } from '../types'
 
 export type SyncStatus =
   | 'local-only'
@@ -447,6 +448,17 @@ export function useTaskStore() {
     }))
   }, [])
 
+  const registerLabels = useCallback((defs: LabelDef[]) => {
+    if (defs.length === 0) return
+    setState((prev) => {
+      let labels = prev.labels
+      for (const def of defs) {
+        labels = upsertLabelDef(labels, def.name, def.description)
+      }
+      return { ...prev, labels: mergeLabelCatalog(labels, prev.tasks) }
+    })
+  }, [])
+
   const deleteLabel = useCallback(
     (
       label: string,
@@ -552,6 +564,7 @@ export function useTaskStore() {
     deleteFlow,
     upsertTask,
     deleteTask,
+    registerLabels,
     deleteLabel,
     addDependency,
     removeDependency,

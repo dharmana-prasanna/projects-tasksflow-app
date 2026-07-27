@@ -8,6 +8,7 @@ import {
 import { CalendarGrid } from './components/CalendarGrid'
 import { ChromePanel } from './components/ChromePanel'
 import { LabelBar } from './components/LabelBar'
+import { LabelFilterBanner } from './components/LabelFilterBanner'
 import type { ColoredDependency } from './components/DependencyArrows'
 import { DependencyGraph } from './components/DependencyGraph'
 import { FlowBar } from './components/FlowBar'
@@ -19,8 +20,8 @@ import { TaskModal } from './components/TaskModal'
 import { FLOW_COLORS, PROJECT_COLORS } from './data/sample'
 import {
   mergeLabelCatalog,
+  selectLabelFilter,
   taskMatchesLabelFilter,
-  toggleLabelFilter,
 } from './domain/taskLabels'
 import { planDependentSync } from './domain/taskDependents'
 import { useTaskStore } from './hooks/useTaskStore'
@@ -48,6 +49,7 @@ export default function App({ onLock }: AppProps) {
     deleteFlow,
     upsertTask,
     deleteTask,
+    registerLabels,
     deleteLabel,
     addDependency,
     removeDependency,
@@ -196,6 +198,23 @@ export default function App({ onLock }: AppProps) {
   function showToast(message: string) {
     setToast(message)
     window.setTimeout(() => setToast(null), 2400)
+  }
+
+  function showTasksForLabel(label: string) {
+    setLabelFilter(selectLabelFilter(label))
+    if (chromeMinimized) {
+      setChromeMinimized(false)
+      saveChromeMinimized(false)
+    }
+    setEditingTask(null)
+    const count = tasks.filter((t) =>
+      taskMatchesLabelFilter(t, selectLabelFilter(label)),
+    ).length
+    showToast(
+      count === 0
+        ? `No tasks with “${label}” yet`
+        : `${count} task${count === 1 ? '' : 's'} with “${label}”`,
+    )
   }
 
   function defaultProjectId() {
@@ -459,14 +478,12 @@ export default function App({ onLock }: AppProps) {
           labels={allLabels}
           tasks={tasks}
           selected={labelFilter}
-          onToggle={(label) =>
-            setLabelFilter((prev) => toggleLabelFilter(prev, label))
-          }
+          onSelect={showTasksForLabel}
           onClear={() => setLabelFilter([])}
           onDelete={(label) => {
             const result = deleteLabel(label)
             if (!result.ok) {
-              setLabelFilter([label])
+              showTasksForLabel(label)
               showToast(result.reason)
               return
             }
@@ -509,6 +526,16 @@ export default function App({ onLock }: AppProps) {
         </p>
       </ChromePanel>
 
+      <LabelFilterBanner
+        selected={labelFilter}
+        tasks={tasks}
+        onClear={() => setLabelFilter([])}
+        onOpenTask={(taskId) => {
+          const task = tasks.find((t) => t.id === taskId)
+          if (task) setEditingTask(task)
+        }}
+      />
+
       {mainView === 'board' ? (
         <CalendarGrid
           days={days}
@@ -543,12 +570,15 @@ export default function App({ onLock }: AppProps) {
         initial={editingTask}
         projects={projects}
         tasks={tasks}
+        labelCatalog={allLabels}
         dependencies={dependencies}
         flows={flows}
         activeFlowId={activeFlowId}
         onClose={() => setEditingTask(null)}
-        onSave={({ task, dependentIds, flowId }) => {
+        onShowLabel={showTasksForLabel}
+        onSave={({ task, dependentIds, flowId, labelMeta }) => {
           upsertTask(task)
+          registerLabels(labelMeta)
           let linkNote = ''
           if (flowId) {
             const plan = planDependentSync(

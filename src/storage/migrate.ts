@@ -1,5 +1,9 @@
 import { FLOW_COLORS, PROJECT_COLORS, SAMPLE_STATE } from '../data/sample'
-import { mergeLabelCatalog, normalizeLabels } from '../domain/taskLabels'
+import {
+  mergeLabelCatalog,
+  normalizeLabelDefs,
+  normalizeLabels,
+} from '../domain/taskLabels'
 import { normalizeMinute, singleDaySegment } from '../time'
 import type {
   DaySegment,
@@ -152,7 +156,7 @@ export function migrate(raw: unknown): StoreState | null {
   })
 
   const labels = mergeLabelCatalog(
-    Array.isArray(parsed.labels) ? parsed.labels.map(String) : [],
+    Array.isArray(parsed.labels) ? normalizeLabelDefs(parsed.labels) : [],
     tasks,
   )
 

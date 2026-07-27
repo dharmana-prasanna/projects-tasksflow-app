@@ -1,24 +1,21 @@
-import {
-  countTasksWithLabel,
-  taskMatchesLabelFilter,
-} from '../domain/taskLabels'
-import type { Task } from '../types'
+import { countTasksWithLabel } from '../domain/taskLabels'
+import type { LabelDef, Task } from '../types'
 
 type Props = {
-  labels: string[]
+  labels: LabelDef[]
   tasks: Task[]
   selected: string[]
-  onToggle: (label: string) => void
+  onSelect: (label: string) => void
   onClear: () => void
   onDelete: (label: string) => void
 }
 
-/** Multi-select chips to filter the board/graph by task labels. */
+/** Label chips to filter the board/graph (matching tasks show in LabelFilterBanner). */
 export function LabelBar({
   labels,
   tasks,
   selected,
-  onToggle,
+  onSelect,
   onClear,
   onDelete,
 }: Props) {
@@ -32,13 +29,18 @@ export function LabelBar({
     )
   }
 
-  const matchingTasks =
-    selected.length === 0
-      ? []
-      : tasks.filter((t) => taskMatchesLabelFilter(t, selected))
-
   return (
     <div className="label-bar">
+      <div className="label-bar__heading">
+        <span className="label-bar__title">Labels</span>
+        <span
+          className="field-help"
+          title="Click a label to list its tasks. × deletes a label only when no tasks use it."
+          aria-label="Click a label to list its tasks. × deletes a label only when no tasks use it."
+        >
+          ?
+        </span>
+      </div>
       <div className="label-bar__filters" role="group" aria-label="Filter by label">
         <button
           type="button"
@@ -48,7 +50,8 @@ export function LabelBar({
         >
           All labels
         </button>
-        {labels.map((label) => {
+        {labels.map((def) => {
+          const label = def.name
           const active = selected.some(
             (s) => s.toLowerCase() === label.toLowerCase(),
           )
@@ -62,7 +65,7 @@ export function LabelBar({
               <button
                 type="button"
                 className={`label-chip${active ? ' label-chip--active' : ''}`}
-                onClick={() => onToggle(label)}
+                onClick={() => onSelect(label)}
                 aria-pressed={active}
                 title={
                   count === 0
@@ -98,29 +101,6 @@ export function LabelBar({
         <button type="button" className="btn btn--ghost" onClick={onClear}>
           Clear labels
         </button>
-      )}
-      {selected.length > 0 && (
-        <div className="label-bar__matches" aria-live="polite">
-          {matchingTasks.length === 0 ? (
-            <p className="label-bar__hint">
-              No tasks match the selected label
-              {selected.length > 1 ? 's' : ''}.
-            </p>
-          ) : (
-            <>
-              <p className="label-bar__hint">
-                {matchingTasks.length} task
-                {matchingTasks.length === 1 ? '' : 's'} with selected label
-                {selected.length > 1 ? 's' : ''}:
-              </p>
-              <ul className="label-bar__task-list">
-                {matchingTasks.map((t) => (
-                  <li key={t.id}>{t.title || '(untitled)'}</li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
       )}
     </div>
   )

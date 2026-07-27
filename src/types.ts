@@ -41,6 +41,12 @@ export type Dependency = {
   flowId: string
 }
 
+/** Catalog entry for a reusable label name (description kept for forward compat). */
+export type LabelDef = {
+  name: string
+  description: string
+}
+
 export type StoreState = {
   projects: Project[]
   flows: Flow[]
@@ -50,7 +56,7 @@ export type StoreState = {
    * Managed label catalog. Labels remain here after the last task unlinks
    * them so they can be deleted explicitly (only when unused).
    */
-  labels: string[]
+  labels: LabelDef[]
 }
 
 export type InteractionMode = 'select' | 'link'
