@@ -252,7 +252,8 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Tasks may also store denormalized first-segment `date/hour/minute/endHour/endMinute` for recovery.
 
 ### REQ-SYNC-002 — Save guards
-- Refuse saving an empty task list over a non-empty Tasks sheet.
+- Refuse saving an empty task list over a non-empty Tasks sheet **unless** the client sends `allowEmptyBoard: true` (explicit Push after confirmation).
+- Auto-save must **not** wipe Sheets when the local board becomes empty (e.g. user deleted the last task); surface a tip to Pull or confirm Push instead.
 - If incoming tasks lack schedules, preserve existing Segments rather than wiping them.
 - On load, copy legacy Task date/hour into Segments when Segments missing for that task.
 
@@ -317,4 +318,4 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 | Task modal  | REQ-UI-004, REQ-UI-013                               | `src/taskModal.layout.test.ts`, `src/domain/taskDependents.test.ts` |
 | Auth gate   | REQ-AUTH-001, REQ-AUTH-002                           | `src/auth/passwordGate.test.ts`                    |
 | Local cache | REQ-LOCAL-001, REQ-LOCAL-003                         | `src/storage/localCache.test.ts`                   |
-| Sync policy | REQ-SYNC-005                                         | `src/storage/syncPolicy.test.ts`                   |
+| Sync policy | REQ-SYNC-002, REQ-SYNC-005                           | `src/storage/syncPolicy.test.ts`                   |

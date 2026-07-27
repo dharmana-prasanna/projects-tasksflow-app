@@ -1,5 +1,16 @@
 import type { StoreState } from '../types'
 
+/**
+ * Auto-save must not wipe Sheets when the board is empty.
+ * Explicit Push may pass allowEmptyBoard after user confirmation.
+ */
+export function shouldSkipEmptyAutoSave(
+  taskCount: number,
+  allowEmptyBoard = false,
+): boolean {
+  return taskCount === 0 && !allowEmptyBoard
+}
+
 /** Prefer browser state over a remote board that lost all schedules (post-redeploy). */
 export function shouldPreferLocalOverRemote(
   remote: StoreState,

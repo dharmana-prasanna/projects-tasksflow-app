@@ -1,6 +1,14 @@
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import type { StoreState } from '../types'
-import { shouldPreferLocalOverRemote } from './syncPolicy'
+import {
+  shouldPreferLocalOverRemote,
+  shouldSkipEmptyAutoSave,
+} from './syncPolicy'
+
+const here = dirname(fileURLToPath(import.meta.url))
 
 const empty: StoreState = {
   projects: [],
@@ -64,5 +72,32 @@ describe('REQ-SYNC-005 — Prefer local after broken remote', () => {
 
   it('does not prefer empty local over empty remote', () => {
     expect(shouldPreferLocalOverRemote(empty, empty)).toBe(false)
+  })
+})
+
+describe('REQ-SYNC-002 — Empty board save guard', () => {
+  it('skips auto-save when board is empty unless explicitly allowed', () => {
+    expect(shouldSkipEmptyAutoSave(0)).toBe(true)
+    expect(shouldSkipEmptyAutoSave(0, false)).toBe(true)
+    expect(shouldSkipEmptyAutoSave(0, true)).toBe(false)
+    expect(shouldSkipEmptyAutoSave(1, false)).toBe(false)
+  })
+
+  it('Apps Script accepts allowEmptyBoard to clear Tasks rows', () => {
+    const gs = readFileSync(
+      resolve(here, '../../google-apps-script/Code.gs'),
+      'utf8',
+    )
+    expect(gs).toMatch(/allowEmptyBoard/)
+    expect(gs).toMatch(/!opts\.allowEmptyBoard/)
+  })
+
+  it('Push confirms before clearing an empty board to Sheets', () => {
+    const src = readFileSync(
+      resolve(here, '../components/StorageModal.tsx'),
+      'utf8',
+    )
+    expect(src).toMatch(/allowEmptyBoard:\s*true/)
+    expect(src).toMatch(/Clear all tasks from Google Sheets/)
   })
 })

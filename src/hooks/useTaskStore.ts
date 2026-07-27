@@ -17,7 +17,10 @@ import {
   saveToSheets,
 } from '../storage/sheetsBackend'
 import { validateNewDependency } from '../domain/dependencies'
-import { shouldPreferLocalOverRemote } from '../storage/syncPolicy'
+import {
+  shouldPreferLocalOverRemote,
+  shouldSkipEmptyAutoSave,
+} from '../storage/syncPolicy'
 import type { Dependency, Flow, Project, StoreState, Task } from '../types'
 
 export type SyncStatus =
@@ -48,50 +51,68 @@ export function useTaskStore() {
   calendarSyncRef.current = calendarSync
   sheetsUrlRef.current = sheetsUrl
 
-  const flushRemoteSave = useCallback(async () => {
-    const url = sheetsUrlRef.current
-    if (!url) return
-    if (saveInFlight.current) {
-      saveQueued.current = true
-      return
-    }
-    saveInFlight.current = true
-    setSyncStatus('saving')
-    setSyncError(null)
-    try {
-      // Always flush the latest board snapshot
-      let calendarWarning: string | undefined
-      let calendarInfo: string | undefined
-      do {
-        saveQueued.current = false
-        const result = await saveToSheets(url, stateRef.current, {
-          syncCalendar: calendarSyncRef.current,
-        })
-        setUpdatedAt(result.updatedAt)
-        calendarWarning = result.calendarError
-        const cal = result.calendar
-        if (cal && (cal.created || cal.updated || cal.synced)) {
-          const name = (cal as { calendarName?: string }).calendarName
-          calendarInfo = `Calendar${name ? ` (${name})` : ''}: +${cal.created ?? 0} / ~${cal.updated ?? 0} / −${cal.deleted ?? 0}. Check the event date in Google Calendar (e.g. Jul 21, 2026).`
-        }
-      } while (saveQueued.current)
-      if (calendarWarning) {
+  const flushRemoteSave = useCallback(
+    async (options: { allowEmptyBoard?: boolean } = {}) => {
+      const url = sheetsUrlRef.current
+      if (!url) return
+      const snapshot = stateRef.current
+      // Auto-save must not wipe Sheets when the board was cleared locally.
+      // Explicit Push can pass allowEmptyBoard after user confirmation.
+      if (
+        shouldSkipEmptyAutoSave(
+          snapshot.tasks.length,
+          Boolean(options.allowEmptyBoard),
+        )
+      ) {
         setSyncStatus('synced')
-        setSyncError(`Sheets saved. Calendar issue: ${calendarWarning}`)
-      } else if (calendarInfo) {
-        setSyncStatus('synced')
-        setSyncError(calendarInfo)
-      } else {
-        setSyncStatus('synced')
-        setSyncError(null)
+        setSyncError(
+          'Board is empty. Open Sheets → Push and confirm to clear the cloud board, or Pull to restore.',
+        )
+        return
       }
-    } catch (err: unknown) {
-      setSyncStatus('error')
-      setSyncError(err instanceof Error ? err.message : String(err))
-    } finally {
-      saveInFlight.current = false
-    }
-  }, [])
+      if (saveInFlight.current) {
+        saveQueued.current = true
+        return
+      }
+      saveInFlight.current = true
+      setSyncStatus('saving')
+      setSyncError(null)
+      try {
+        let calendarWarning: string | undefined
+        let calendarInfo: string | undefined
+        do {
+          saveQueued.current = false
+          const result = await saveToSheets(url, stateRef.current, {
+            syncCalendar: calendarSyncRef.current,
+            allowEmptyBoard: options.allowEmptyBoard,
+          })
+          setUpdatedAt(result.updatedAt)
+          calendarWarning = result.calendarError
+          const cal = result.calendar
+          if (cal && (cal.created || cal.updated || cal.synced)) {
+            const name = (cal as { calendarName?: string }).calendarName
+            calendarInfo = `Calendar${name ? ` (${name})` : ''}: +${cal.created ?? 0} / ~${cal.updated ?? 0} / −${cal.deleted ?? 0}. Check the event date in Google Calendar (e.g. Jul 21, 2026).`
+          }
+        } while (saveQueued.current)
+        if (calendarWarning) {
+          setSyncStatus('synced')
+          setSyncError(`Sheets saved. Calendar issue: ${calendarWarning}`)
+        } else if (calendarInfo) {
+          setSyncStatus('synced')
+          setSyncError(calendarInfo)
+        } else {
+          setSyncStatus('synced')
+          setSyncError(null)
+        }
+      } catch (err: unknown) {
+        setSyncStatus('error')
+        setSyncError(err instanceof Error ? err.message : String(err))
+      } finally {
+        saveInFlight.current = false
+      }
+    },
+    [],
+  )
 
   // Cache every change locally
   useEffect(() => {
@@ -236,21 +257,36 @@ export function useTaskStore() {
     }
   }, [sheetsUrl])
 
-  const pushToSheets = useCallback(async () => {
-    if (!sheetsUrl) return { ok: false as const, reason: 'No Sheets URL configured.' }
-    try {
-      await flushRemoteSave()
-      return {
-        ok: true as const,
-        detail: calendarSyncRef.current
-          ? 'Saved to Sheets and Calendar (duplicates cleaned).'
-          : 'Saved to Sheets.',
+  const pushToSheets = useCallback(
+    async (options: { allowEmptyBoard?: boolean } = {}) => {
+      if (!sheetsUrl) {
+        return { ok: false as const, reason: 'No Sheets URL configured.' }
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      return { ok: false as const, reason: message }
-    }
-  }, [sheetsUrl, flushRemoteSave])
+      try {
+        const empty = stateRef.current.tasks.length === 0
+        if (empty && !options.allowEmptyBoard) {
+          return {
+            ok: false as const,
+            reason:
+              'Board is empty. Confirm clearing the cloud board when prompted, or Pull to restore.',
+          }
+        }
+        await flushRemoteSave({
+          allowEmptyBoard: empty && Boolean(options.allowEmptyBoard),
+        })
+        return {
+          ok: true as const,
+          detail: calendarSyncRef.current
+            ? 'Saved to Sheets and Calendar (duplicates cleaned).'
+            : 'Saved to Sheets.',
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        return { ok: false as const, reason: message }
+      }
+    },
+    [sheetsUrl, flushRemoteSave],
+  )
 
   const deleteInvalidTasks = useCallback(async () => {
     if (!sheetsUrl) {

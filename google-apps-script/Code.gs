@@ -54,7 +54,10 @@ function handle_(req) {
     }
     if (action === 'save') {
       if (!req.state) return json_({ ok: false, error: 'Missing state' })
-      var saved = saveState_(req.state)
+      var saved = saveState_(req.state, {
+        allowEmptyBoard:
+          req.allowEmptyBoard === true || req.allowEmptyBoard === 'true',
+      })
       if (!saved.ok) return json_(saved)
       var updatedAt = new Date().toISOString()
       setMeta_('updatedAt', updatedAt)
@@ -365,7 +368,8 @@ function loadState_() {
   return { projects: projects, flows: flows, tasks: tasks, dependencies: dependencies }
 }
 
-function saveState_(state) {
+function saveState_(state, opts) {
+  opts = opts || {}
   ensureAll_()
   migrateLegacyTasksToSegments_()
   var ss = ss_()
@@ -377,14 +381,15 @@ function saveState_(state) {
 
   var tasks = state.tasks || []
 
-  // Never wipe a populated sheet with an empty board (common after redeploy/race).
-  if (tasks.length === 0 && existingTaskCount > 0) {
+  // Never wipe a populated sheet with an empty board unless the client
+  // explicitly confirmed (Push after deleting the last task).
+  if (tasks.length === 0 && existingTaskCount > 0 && !opts.allowEmptyBoard) {
     return {
       ok: false,
       error:
         'Refusing to save empty tasks over ' +
         existingTaskCount +
-        ' existing Tasks rows. Pull from Sheets or restore local data first.',
+        ' existing Tasks rows. Pull from Sheets to restore, or Push again and confirm clearing the cloud board.',
     }
   }
 

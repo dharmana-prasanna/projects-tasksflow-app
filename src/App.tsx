@@ -598,6 +598,7 @@ export default function App({ onLock }: AppProps) {
           syncStatus={syncStatus}
           syncError={syncError}
           updatedAt={updatedAt}
+          taskCount={tasks.length}
           onClose={() => setStorageOpen(false)}
           onConnect={connectSheets}
           onDisconnect={disconnectSheets}

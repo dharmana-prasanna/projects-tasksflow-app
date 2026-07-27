@@ -18,9 +18,11 @@ type Props = {
     | { ok: false; reason: string }
   >
   onPull: () => Promise<{ ok: true } | { ok: false; reason: string }>
-  onPush: () => Promise<
-    { ok: true; detail?: string } | { ok: false; reason: string }
-  >
+  /** Current local task count — used to confirm clearing Sheets when empty. */
+  taskCount: number
+  onPush: (options?: {
+    allowEmptyBoard?: boolean
+  }) => Promise<{ ok: true; detail?: string } | { ok: false; reason: string }>
   onDeleteInvalidTasks: () => Promise<
     { ok: true; detail?: string } | { ok: false; reason: string }
   >
@@ -48,6 +50,7 @@ export function StorageModal({
   onPull,
   onPush,
   onDeleteInvalidTasks,
+  taskCount,
 }: Props) {
   const [url, setUrl] = useState(sheetsUrl)
   const [busy, setBusy] = useState(false)
@@ -76,9 +79,20 @@ export function StorageModal({
   }
 
   async function push() {
+    if (taskCount === 0) {
+      if (
+        !window.confirm(
+          'Your board is empty. Clear all tasks from Google Sheets too? This cannot be undone.',
+        )
+      ) {
+        return
+      }
+    }
     setBusy(true)
     setMessage(null)
-    const result = await onPush()
+    const result = await onPush(
+      taskCount === 0 ? { allowEmptyBoard: true } : undefined,
+    )
     setBusy(false)
     setMessage(result.ok ? (result.detail ?? 'Pushed board to Sheets.') : result.reason)
   }
@@ -246,6 +260,11 @@ export function StorageModal({
           <li>
             If Google Calendar already has duplicates, run{' '}
             <code>cleanupDuplicateFlowboardEvents</code> in Apps Script, then Push.
+          </li>
+          <li>
+            If you deleted every task locally and sync complains about an empty board:
+            click <strong>Push</strong> and confirm clearing Sheets (or <strong>Pull</strong> to
+            restore). After updating <code>Code.gs</code>, redeploy a <strong>New version</strong>.
           </li>
         </ol>
         <p className="storage-note">

@@ -23,6 +23,8 @@ export type SheetsResponse = {
 
 export type SaveOptions = {
   syncCalendar?: boolean
+  /** When true, allow overwriting a non-empty Tasks sheet with zero tasks. */
+  allowEmptyBoard?: boolean
 }
 
 /**
@@ -108,6 +110,7 @@ export async function saveToSheets(
     action: 'save',
     state,
     syncCalendar: Boolean(options.syncCalendar),
+    allowEmptyBoard: Boolean(options.allowEmptyBoard),
   })
   if (!data.ok) throw new Error(data.error || 'Save failed')
   return {
