@@ -243,6 +243,7 @@ describe('REQ-TIME-006 — Move task', () => {
       title: 'Empty',
       notes: '',
       projectId: 'p1',
+      labels: [],
       segments: [],
     }
     const moved = moveTaskToSlot(task, '2026-07-18', 8, 15)

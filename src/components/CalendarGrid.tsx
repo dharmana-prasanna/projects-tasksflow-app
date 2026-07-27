@@ -47,10 +47,12 @@ import {
   findOffscreenLinkedTasks,
   OffscreenAnchors,
 } from './OffscreenAnchors'
+import { UnscheduledPanel } from './UnscheduledPanel'
 
 type Props = {
   days: string[]
   tasks: ColoredTask[]
+  unscheduledTasks: ColoredTask[]
   dependencies: ColoredDependency[]
   activeFlowColor?: string
   activeFlowId?: string | null
@@ -61,6 +63,7 @@ type Props = {
     endHour: number
     endMinute: number
   }) => void
+  onCreateUnscheduled: () => void
   onTaskClick: (task: Task) => void
   onMoveTask: (task: Task) => void
   onLinkTasks: (fromId: string, toId: string) => void
@@ -94,10 +97,12 @@ type SlotSelectSession = {
 export function CalendarGrid({
   days,
   tasks,
+  unscheduledTasks,
   dependencies,
   activeFlowColor = '#c48a12',
   activeFlowId = null,
   onCreateTask,
+  onCreateUnscheduled,
   onTaskClick,
   onMoveTask,
   onLinkTasks,
@@ -459,10 +464,13 @@ export function CalendarGrid({
     if (linkRef.current) return
     const task = event.active.data.current?.task as ColoredTask | undefined
     const segmentDate = event.active.data.current?.segmentDate as string | undefined
+    const fromBacklog = Boolean(event.active.data.current?.unscheduled)
     const resolved =
-      task ?? tasks.find((t) => event.active.id.toString().startsWith(t.id))
+      task ??
+      tasks.find((t) => event.active.id.toString().startsWith(t.id)) ??
+      unscheduledTasks.find((t) => event.active.id.toString().startsWith(t.id))
     setActiveTask(resolved ?? null)
-    if (resolved) {
+    if (resolved && !fromBacklog && resolved.segments.length > 0) {
       const seg =
         resolved.segments.find((s) => s.date === segmentDate) ??
         primarySegment(resolved)
@@ -533,6 +541,7 @@ export function CalendarGrid({
         setActiveSegment(null)
       }}
     >
+      <div className="workspace">
       <div className="board-shell">
       <div
         className={[
@@ -659,14 +668,25 @@ export function CalendarGrid({
       </div>
       </div>
 
+      <UnscheduledPanel
+        tasks={unscheduledTasks}
+        onCreate={onCreateUnscheduled}
+        onTaskClick={onTaskClick}
+      />
+      </div>
+
       <DragOverlay dropAnimation={null}>
-        {activeTask && activeSegment ? (
+        {activeTask ? (
           <div
             className="task task--ghost"
             style={{ ['--task-color' as string]: activeTask.color }}
           >
             <span className="task__title">{activeTask.title}</span>
-            <span className="task__time">{formatRange(activeSegment)}</span>
+            <span className="task__time">
+              {activeSegment
+                ? formatRange(activeSegment)
+                : 'Drop on a time slot'}
+            </span>
           </div>
         ) : null}
       </DragOverlay>

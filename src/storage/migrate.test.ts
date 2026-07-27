@@ -67,6 +67,24 @@ describe('REQ-LOCAL-002 / REQ-MODEL-* — Migration', () => {
     ])
   })
 
+  it('preserves explicit empty segments as unscheduled', () => {
+    const state = migrate({
+      projects: [{ id: 'p1', name: 'Alpha', color: '#111' }],
+      flows: [{ id: 'f1', name: 'Main', color: '#222', projectId: 'p1' }],
+      tasks: [
+        {
+          id: 't1',
+          title: 'Backlog',
+          projectId: 'p1',
+          labels: [],
+          segments: [],
+        },
+      ],
+      dependencies: [],
+    })
+    expect(state!.tasks[0].segments).toEqual([])
+  })
+
   it('keeps unused catalog labels and descriptions on migrate', () => {
     const state = migrate({
       projects: [{ id: 'p1', name: 'Alpha', color: '#111' }],

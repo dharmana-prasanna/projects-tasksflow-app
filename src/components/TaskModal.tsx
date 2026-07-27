@@ -81,6 +81,7 @@ export function TaskModal({
   const [dependentQuery, setDependentQuery] = useState('')
   const [labels, setLabels] = useState<string[]>([])
   const [labelDraft, setLabelDraft] = useState('')
+  const [unscheduled, setUnscheduled] = useState(false)
 
   const activeFlow = activeFlowId
     ? flows.find((f) => f.id === activeFlowId)
@@ -97,22 +98,32 @@ export function TaskModal({
     setLabels(normalizeLabels(initial.labels))
     setLabelDraft('')
 
-    const segs =
-      initial.segments && initial.segments.length > 0
-        ? initial.segments.map(normalizeSegment)
-        : [
-            {
-              date: format(new Date(), 'yyyy-MM-dd'),
-              startHour: 9,
-              startMinute: 0,
-              endHour: 10,
-              endMinute: 0,
-            },
-          ]
-    const sorted = [...segs].sort((a, b) => a.date.localeCompare(b.date))
-    setSegments(sorted)
-    setStartDate(sorted[0].date)
-    setEndDate(sorted[sorted.length - 1].date)
+    const explicitEmpty =
+      Array.isArray(initial.segments) && initial.segments.length === 0
+    if (explicitEmpty) {
+      setUnscheduled(true)
+      setSegments([])
+      setStartDate('')
+      setEndDate('')
+    } else {
+      setUnscheduled(false)
+      const segs =
+        initial.segments && initial.segments.length > 0
+          ? initial.segments.map(normalizeSegment)
+          : [
+              {
+                date: format(new Date(), 'yyyy-MM-dd'),
+                startHour: 9,
+                startMinute: 0,
+                endHour: 10,
+                endMinute: 0,
+              },
+            ]
+      const sorted = [...segs].sort((a, b) => a.date.localeCompare(b.date))
+      setSegments(sorted)
+      setStartDate(sorted[0].date)
+      setEndDate(sorted[sorted.length - 1].date)
+    }
 
     if (initial.id && activeFlowId) {
       setDependentIds(
@@ -178,9 +189,31 @@ export function TaskModal({
     setLabelDraft('')
   }
 
+  function setBacklogMode(next: boolean) {
+    setUnscheduled(next)
+    if (next) {
+      setSegments([])
+      setStartDate('')
+      setEndDate('')
+      return
+    }
+    const today = format(new Date(), 'yyyy-MM-dd')
+    const seg = {
+      date: today,
+      startHour: 9,
+      startMinute: 0,
+      endHour: 10,
+      endMinute: 0,
+    }
+    setSegments([seg])
+    setStartDate(today)
+    setEndDate(today)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!title.trim() || !projectId || segments.length === 0) return
+    if (!title.trim() || !projectId) return
+    if (!unscheduled && segments.length === 0) return
     const normalized = normalizeLabels(labels)
     const task: Task = {
       id: initial!.id ?? crypto.randomUUID(),
@@ -188,7 +221,7 @@ export function TaskModal({
       notes: notes.trim(),
       projectId,
       labels: normalized,
-      segments: segments.map(normalizeSegment),
+      segments: unscheduled ? [] : segments.map(normalizeSegment),
     }
     const labelMeta: LabelDef[] = normalized.map((name) => ({
       name,
@@ -337,6 +370,18 @@ export function TaskModal({
             </datalist>
           </fieldset>
 
+          <label className="task-backlog-toggle">
+            <input
+              type="checkbox"
+              checked={unscheduled}
+              onChange={(e) => setBacklogMode(e.target.checked)}
+            />
+            <span>
+              Backlog only — no date/time (drag onto the calendar later)
+            </span>
+          </label>
+
+          {!unscheduled && (
           <div className="modal__row">
             <label>
               Start date
@@ -358,14 +403,17 @@ export function TaskModal({
               />
             </label>
           </div>
+          )}
 
+          {!unscheduled && (
           <p className="modal__tip">
             {multiDay
               ? `Multi-day · ${rangeLabel}. Set start/end time for each day below.`
               : `Single day · ${rangeLabel}.`}
           </p>
+          )}
 
-          {!multiDay && segments[0] && (
+          {!unscheduled && !multiDay && segments[0] && (
             <div className="modal__row">
               <label>
                 Start time
@@ -414,7 +462,7 @@ export function TaskModal({
             </div>
           )}
 
-          {multiDay && (
+          {!unscheduled && multiDay && (
             <div className="day-times">
               <div className="day-times__head">
                 <span>Day</span>

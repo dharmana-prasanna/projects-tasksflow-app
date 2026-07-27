@@ -41,16 +41,20 @@ function migrateTask(task: LegacyTask, fallbackProjectId: string, projectIds: Se
   }
 
   let segments: DaySegment[] = []
-  if (Array.isArray(task.segments) && task.segments.length > 0) {
-    segments = task.segments.map((s) =>
-      singleDaySegment(
-        s.date,
-        s.startHour,
-        normalizeMinute(s.startMinute),
-        s.endHour,
-        normalizeMinute(s.endMinute),
-      ),
-    )
+  if (Array.isArray(task.segments)) {
+    // Explicit [] = unscheduled backlog task (do not invent a date).
+    segments =
+      task.segments.length > 0
+        ? task.segments.map((s) =>
+            singleDaySegment(
+              s.date,
+              s.startHour,
+              normalizeMinute(s.startMinute),
+              s.endHour,
+              normalizeMinute(s.endMinute),
+            ),
+          )
+        : []
   } else if (task.date != null && task.hour != null) {
     segments = [
       singleDaySegment(

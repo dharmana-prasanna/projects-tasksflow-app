@@ -40,6 +40,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - End time is **exclusive** on the 15-minute grid (e.g. 6:00–7:00 occupies 6:00, 6:15, 6:30, 6:45).
 - End-of-day may be represented as hour `24`, minute `0`.
 - A task may span multiple days via multiple segments; each day may have its own start/end.
+- **`segments: []` means unscheduled** (backlog). Migrate preserves explicit empty arrays; missing segments on legacy data may still invent a recovery segment.
 
 ### REQ-MODEL-005 — Task labels
 - A task may have **zero or more labels** (`labels: string[]`).
@@ -124,7 +125,15 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Labels can be added (Enter / comma / Add) and removed as chips in the task editor.
 - Multi-day tasks show a per-day start/end editor.
 - Board create via slot select pre-fills segment times.
+- A **Backlog only** checkbox saves with `segments: []` (no date/time).
 - When editing an existing task, **Delete** sits in the **sticky modal header** (next to Close) so it stays reachable without scrolling on mobile; Cancel/Save remain in the footer.
+
+### REQ-UI-018 — Unscheduled backlog panel
+- Board view shows a right-side **Backlog** panel of unscheduled tasks (`isTaskUnscheduled` / empty segments), filtered by the same project + label filters as the board.
+- Users can add backlog tasks from the panel (`+`) without assigning dates/times.
+- Backlog cards are draggable onto calendar slots (same `DndContext` as the board). Drop calls `moveTaskToSlot` (creates a 1-hour segment) and upserts — the task leaves the backlog and appears on the calendar.
+- Clicking a backlog card opens the task editor.
+- On narrow viewports the panel stacks under the board.
 
 ### REQ-UI-017 — Filter by labels
 - Chrome shows a **LabelBar** of catalog labels plus **All labels**.
@@ -328,6 +337,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 | Time grid   | REQ-TIME-001 … 008                                   | `src/time.test.ts`                                 |
 | Model migrate | REQ-LOCAL-002, REQ-MODEL-*                         | `src/storage/migrate.test.ts`                      |
 | Task labels | REQ-MODEL-005, REQ-UI-017                            | `src/domain/taskLabels.test.ts`                    |
+| Unscheduled backlog | REQ-UI-018, REQ-MODEL-003                      | `src/domain/unscheduled.test.ts`, `src/time.test.ts` |
 | Dependencies| REQ-DEP-001 … 005, REQ-MODEL-004                     | `src/domain/dependencies.test.ts`                  |
 | Slot select | REQ-TIME-007, REQ-UI-016                             | `src/time.test.ts`, `src/domain/slotSelectGesture.test.ts` |
 | Board layout| REQ-UI-008, REQ-UI-009, REQ-UI-014, REQ-UI-015, REQ-LOCAL-004 | `src/boardLayout.test.ts`                   |

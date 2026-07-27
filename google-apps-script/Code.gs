@@ -504,14 +504,24 @@ function saveState_(state, opts) {
   var segOut = []
   for (var i = 0; i < tasks.length; i++) {
     var task = tasks[i]
-    var segs = task.segments || []
-    if (segs.length === 0 && task.date) {
-      var fromLegacy = legacySegmentFromRow_(task)
-      if (fromLegacy) segs = [fromLegacy]
-    }
-    // Keep prior sheet segments if the client sent a task with no schedule
-    if (segs.length === 0 && existingSegsByTask[task.id]) {
-      segs = existingSegsByTask[task.id]
+    // Explicit segments: [] means unscheduled backlog — clear sheet segments.
+    // Omitted segments (older clients) keep prior sheet rows when present.
+    var hasSegmentsField = Object.prototype.hasOwnProperty.call(task, 'segments')
+    var segs = []
+    if (hasSegmentsField) {
+      segs = Array.isArray(task.segments) ? task.segments : []
+      if (segs.length === 0 && task.date) {
+        var fromLegacy = legacySegmentFromRow_(task)
+        if (fromLegacy) segs = [fromLegacy]
+      }
+    } else {
+      if (task.date) {
+        var fromLegacyOmit = legacySegmentFromRow_(task)
+        if (fromLegacyOmit) segs = [fromLegacyOmit]
+      }
+      if (segs.length === 0 && existingSegsByTask[task.id]) {
+        segs = existingSegsByTask[task.id]
+      }
     }
     hydrated.push({
       id: task.id,
@@ -885,7 +895,8 @@ function taskHasValidDate_(task) {
 }
 
 /**
- * Delete tasks that have no valid schedule date (the ones Calendar skips).
+ * Delete tasks that claim a schedule but have no valid date.
+ * Unscheduled backlog tasks (empty segments) are kept.
  * Also removes their Segments, Dependencies, and CalendarMap rows.
  * Runnable from the Apps Script editor, or via Flowboard Cloud sync.
  */
@@ -893,6 +904,15 @@ function deleteInvalidTasks() {
   var result = deleteInvalidTasks_()
   Logger.log(JSON.stringify(result))
   return result
+}
+
+function taskIsCorruptSchedule_(task) {
+  var segs = task.segments || []
+  // Empty segments = intentional backlog — not corrupt.
+  if (!segs.length && (task.date === undefined || task.date === null || task.date === '')) {
+    return false
+  }
+  return !taskHasValidDate_(task)
 }
 
 function deleteInvalidTasks_() {
@@ -904,7 +924,7 @@ function deleteInvalidTasks_() {
 
   for (var t = 0; t < state.tasks.length; t++) {
     var task = state.tasks[t]
-    if (taskHasValidDate_(task)) {
+    if (!taskIsCorruptSchedule_(task)) {
       keepTasks.push(task)
     } else {
       removed.push({ id: task.id, title: task.title || '(untitled)' })

@@ -23,6 +23,11 @@ import {
   selectLabelFilter,
   taskMatchesLabelFilter,
 } from './domain/taskLabels'
+import {
+  filterScheduledTasks,
+  filterUnscheduledTasks,
+  isTaskUnscheduled,
+} from './domain/unscheduled'
 import { planDependentSync } from './domain/taskDependents'
 import { useTaskStore } from './hooks/useTaskStore'
 import { singleDaySegment } from './time'
@@ -142,6 +147,16 @@ export default function App({ onLock }: AppProps) {
     return byProject.filter((t) => taskMatchesLabelFilter(t, labelFilter))
   }, [coloredTasks, projectFilter, labelFilter])
 
+  const scheduledTasks = useMemo(
+    () => filterScheduledTasks(visibleTasks),
+    [visibleTasks],
+  )
+
+  const unscheduledTasks = useMemo(
+    () => filterUnscheduledTasks(visibleTasks),
+    [visibleTasks],
+  )
+
   const visibleDependencies: ColoredDependency[] = useMemo(() => {
     const ids = new Set(visibleTasks.map((t) => t.id))
     return dependencies
@@ -249,11 +264,28 @@ export default function App({ onLock }: AppProps) {
 
   const handleMoveTask = useCallback(
     (task: Task) => {
+      const wasBacklog = tasks.some(
+        (t) => t.id === task.id && isTaskUnscheduled(t),
+      )
       upsertTask(task)
-      showToast(`Moved “${task.title}”`)
+      showToast(
+        wasBacklog
+          ? `Scheduled “${task.title}” from backlog`
+          : `Moved “${task.title}”`,
+      )
     },
-    [upsertTask],
+    [upsertTask, tasks],
   )
+
+  function handleCreateUnscheduled() {
+    setEditingTask({
+      title: '',
+      notes: '',
+      projectId: defaultProjectId(),
+      labels: [],
+      segments: [],
+    })
+  }
 
   const handleLinkTasks = useCallback(
     (fromId: string, toId: string) => {
@@ -539,11 +571,13 @@ export default function App({ onLock }: AppProps) {
       {mainView === 'board' ? (
         <CalendarGrid
           days={days}
-          tasks={visibleTasks}
+          tasks={scheduledTasks}
+          unscheduledTasks={unscheduledTasks}
           dependencies={visibleDependencies}
           activeFlowColor={activeFlow?.color}
           activeFlowId={activeFlowId}
           onCreateTask={handleCreateTask}
+          onCreateUnscheduled={handleCreateUnscheduled}
           onTaskClick={(task) => setEditingTask(task)}
           onMoveTask={handleMoveTask}
           onLinkTasks={handleLinkTasks}
@@ -554,7 +588,7 @@ export default function App({ onLock }: AppProps) {
         />
       ) : (
         <DependencyGraph
-          tasks={visibleTasks}
+          tasks={scheduledTasks}
           dependencies={visibleDependencies}
           activeFlowId={activeFlowId}
           onTaskClick={(task) => setEditingTask(task)}

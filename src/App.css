@@ -752,13 +752,131 @@
   margin: 0;
 }
 
+.workspace {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
 .board-shell {
   /* flex-basis 0 forces a bounded height on iOS Safari so overflow can scroll */
   flex: 1 1 0;
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.unscheduled-panel {
+  flex: 0 0 15.5rem;
+  min-width: 12rem;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 250, 252, 0.7));
+  box-shadow: 0 12px 28px rgba(20, 40, 55, 0.06);
+  overflow: hidden;
+}
+
+.unscheduled-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.unscheduled-panel__heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.unscheduled-panel__title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+
+.unscheduled-panel__empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.unscheduled-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  overflow: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.unscheduled-card {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line-soft);
+  border-left: 4px solid var(--task-color, #1d4e89);
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.55rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  cursor: grab;
+  font: inherit;
+  color: var(--ink);
+  touch-action: none;
+}
+
+.unscheduled-card:hover {
+  border-color: var(--line);
+  background: #fff;
+}
+
+.unscheduled-card--dragging {
+  cursor: grabbing;
+}
+
+.unscheduled-card__title {
+  font-size: 0.86rem;
+  font-weight: 650;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.unscheduled-card__hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.task-backlog-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.task-backlog-toggle input {
+  margin-top: 0.2rem;
 }
 
 .graph-view {
@@ -2034,6 +2152,16 @@
     max-width: 4.25rem;
   }
 
+  .workspace {
+    flex-direction: column;
+  }
+
+  .unscheduled-panel {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-height: 32dvh;
+  }
+
   .week-nav {
     flex: 1 1 auto;
     min-width: 0;
@@ -2096,6 +2224,7 @@
   }
 
   /* Board takes most of the phone screen */
+  .workspace,
   .board-shell,
   .graph-view {
     flex: 1 1 0;
