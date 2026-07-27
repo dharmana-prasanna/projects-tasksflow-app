@@ -53,6 +53,6 @@ describe('REQ-UI-014 — Mobile layout keeps board visible', () => {
     expect(mobile).toMatch(/\.brand\s*\{[^}]*position:\s*absolute/s)
     expect(mobile).toMatch(/\.topbar__row\s*\{[^}]*display:\s*flex/s)
     expect(mobile).toMatch(/\.view-switch--days\s*\{[^}]*display:\s*none/s)
-    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*72dvh/s)
+    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*52dvh/s)
   })
 })

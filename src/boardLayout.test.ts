@@ -100,12 +100,24 @@ describe('REQ-UI-014 — Mobile board scrolling', () => {
 
   it('reserves board space and compact controls on narrow viewports', () => {
     const mobile = appCss.match(/@media \(max-width:\s*720px\)\s*\{[\s\S]*$/)?.[0] ?? ''
-    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*72dvh/s)
+    expect(mobile).toMatch(/\.board-shell[\s\S]*?min-height:\s*52dvh/s)
     expect(mobile).toMatch(/\.brand\s*\{[^}]*position:\s*absolute/s)
     expect(mobile).toMatch(/\.topbar__row\s*\{[^}]*display:\s*flex/s)
     expect(mobile).toMatch(/\.view-switch--days\s*\{[^}]*display:\s*none/s)
     expect(mobile).toMatch(/\.day-span-select\s*\{[^}]*display:\s*inline-flex/s)
     expect(mobile).toMatch(/\.topbar__optional\s*\{[^}]*display:\s*none/s)
+  })
+
+  it('keeps the backlog list scrollable within a bounded panel', () => {
+    expect(appCss).toMatch(
+      /\.unscheduled-panel__list\s*\{[^}]*overflow-y:\s*auto/s,
+    )
+    expect(appCss).toMatch(
+      /\.unscheduled-panel__list\s*\{[^}]*flex:\s*1\s+1\s+0/s,
+    )
+    expect(appCss).toMatch(
+      /\.unscheduled-card\s*\{[^}]*touch-action:\s*pan-y/s,
+    )
   })
 })
 

@@ -134,6 +134,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Backlog cards are draggable onto calendar slots (same `DndContext` as the board). Drop calls `moveTaskToSlot` (creates a 1-hour segment) and upserts — the task leaves the backlog and appears on the calendar.
 - Scheduled calendar tasks can be dragged **back onto the Backlog** drop target (`BACKLOG_DROP_ID`); drop calls `unscheduleTask` (clears `segments` to `[]`) so the task leaves the calendar and appears in the backlog.
 - Clicking a backlog card opens the task editor.
+- The backlog panel fills the workspace height (desktop) / a bounded share of the viewport (mobile); its task list scrolls (`overflow-y: auto`) so many backlog items stay reachable. Cards use `touch-action: pan-y` so the list can scroll; hold-to-drag still schedules/unschedules.
 - On narrow viewports the panel stacks under the board.
 
 ### REQ-UI-017 — Filter by labels
