@@ -43,9 +43,11 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 
 ### REQ-MODEL-005 — Task labels
 - A task may have **zero or more labels** (`labels: string[]`).
+- The board keeps a **label catalog** on `StoreState.labels` (union of known names). Catalog entries remain after the last task unlinks them until explicitly deleted.
 - Labels are normalized via `normalizeLabels` / `normalizeLabel`: trimmed, collapsed whitespace, max 32 chars, max 12 per task, case-insensitive dedupe (first spelling kept), sorted A–Z.
-- Missing / invalid labels migrate to `[]`.
-- Sheets stores labels on the Tasks tab as a comma-separated `labels` cell (JSON arrays also accepted on load).
+- Missing / invalid task labels migrate to `[]`; catalog is rebuilt via `mergeLabelCatalog`.
+- Sheets stores per-task labels on the Tasks tab as a comma-separated `labels` cell, and the catalog in Meta key `labelCatalog` (JSON array).
+- **Delete catalog label** (`deleteLabel` / `canDeleteLabel`) is allowed only when **no task** still uses that label (`countTasksWithLabel === 0`). If any task is linked, delete is refused.
 
 ### REQ-MODEL-004 — Dependencies
 - A dependency has `id`, `fromId`, `toId`, `flowId`.
@@ -125,8 +127,10 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - When editing an existing task, **Delete** sits in the **sticky modal header** (next to Close) so it stays reachable without scrolling on mobile; Cancel/Save remain in the footer.
 
 ### REQ-UI-017 — Filter by labels
-- Chrome shows a **LabelBar** of known labels (from all tasks) plus **All labels**.
-- Selecting one or more label chips filters board/graph tasks to those matching **any** selected label (`taskMatchesLabelFilter`, OR).
+- Chrome shows a **LabelBar** of catalog labels plus **All labels**.
+- **Clicking a label chip filters** the board/graph to tasks matching **any** selected label (`taskMatchesLabelFilter`, OR) and shows a **list of matching task titles** under the bar. Clicking a label must not delete it.
+- Each chip shows a usage count; **×** deletes from the catalog only when unused. If tasks still use it, delete is refused, the filter selects that label (so the task list appears), and a toast explains why.
+- In the task editor, **×** only unlinks the label from **that task** (never deletes the catalog entry by itself).
 - **All labels** / **Clear labels** clears the filter (show all, still subject to project filter).
 - Project filter and label filter combine (AND across dimensions).
 

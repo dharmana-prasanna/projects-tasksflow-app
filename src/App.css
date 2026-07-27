@@ -321,6 +321,28 @@
   align-items: center;
 }
 
+.label-chip-wrap {
+  display: inline-flex;
+  align-items: stretch;
+  max-width: 100%;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px dashed var(--line);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.label-chip-wrap--active {
+  border-style: solid;
+  border-color: #1d4e89;
+  background: #1d4e89;
+}
+
+.label-chip-wrap--static {
+  border-style: solid;
+  border-color: rgba(29, 78, 137, 0.25);
+  background: rgba(29, 78, 137, 0.08);
+}
+
 .label-chip {
   appearance: none;
   border: 1px dashed var(--line);
@@ -334,10 +356,20 @@
   cursor: pointer;
 }
 
+.label-chip-wrap > .label-chip {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
 .label-chip:hover {
   color: var(--ink);
   background: #fff;
   border-style: solid;
+}
+
+.label-chip-wrap > .label-chip:hover {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .label-chip--active {
@@ -347,11 +379,72 @@
   color: #fff;
 }
 
+.label-chip-wrap--active > .label-chip {
+  color: #fff;
+}
+
 .label-chip--removable {
   border-style: solid;
   color: var(--ink);
   background: rgba(29, 78, 137, 0.08);
   border-color: rgba(29, 78, 137, 0.25);
+  cursor: default;
+}
+
+.label-chip-wrap--static > .label-chip--removable {
+  border: none;
+  background: transparent;
+}
+
+.label-chip__count {
+  margin-left: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+.label-chip__delete {
+  appearance: none;
+  border: none;
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 0.45rem;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.label-chip-wrap--active .label-chip__delete {
+  border-left-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.label-chip__delete:hover {
+  color: #8a2f45;
+  background: rgba(138, 47, 69, 0.08);
+}
+
+.label-chip-wrap--active .label-chip__delete:hover {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.label-bar__matches {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label-bar__task-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: var(--ink);
 }
 
 .task-labels {

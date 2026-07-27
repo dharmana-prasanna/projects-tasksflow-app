@@ -21,6 +21,13 @@ import {
   shouldPreferLocalOverRemote,
   shouldSkipEmptyAutoSave,
 } from '../storage/syncPolicy'
+import {
+  canDeleteLabel,
+  countTasksWithLabel,
+  mergeLabelCatalog,
+  normalizeLabel,
+  removeFromLabelCatalog,
+} from '../domain/taskLabels'
 import type { Dependency, Flow, Project, StoreState, Task } from '../types'
 
 export type SyncStatus =
@@ -358,6 +365,7 @@ export function useTaskStore() {
           prev.flows.filter((f) => f.projectId === projectId).map((f) => f.id),
         )
         return {
+          ...prev,
           projects: prev.projects.filter((p) => p.id !== projectId),
           flows: prev.flows.filter((f) => f.projectId !== projectId),
           tasks: prev.tasks.map((t) =>
@@ -418,11 +426,13 @@ export function useTaskStore() {
   const upsertTask = useCallback((task: Task) => {
     setState((prev) => {
       const exists = prev.tasks.some((t) => t.id === task.id)
+      const tasks = exists
+        ? prev.tasks.map((t) => (t.id === task.id ? task : t))
+        : [...prev.tasks, task]
       return {
         ...prev,
-        tasks: exists
-          ? prev.tasks.map((t) => (t.id === task.id ? task : t))
-          : [...prev.tasks, task],
+        tasks,
+        labels: mergeLabelCatalog(prev.labels, tasks),
       }
     })
   }, [])
@@ -436,6 +446,37 @@ export function useTaskStore() {
       ),
     }))
   }, [])
+
+  const deleteLabel = useCallback(
+    (
+      label: string,
+    ): { ok: true } | { ok: false; reason: string; count: number } => {
+      const normalized = normalizeLabel(label)
+      if (!normalized) {
+        return { ok: false, reason: 'Invalid label.', count: 0 }
+      }
+      let result: { ok: true } | { ok: false; reason: string; count: number } = {
+        ok: true,
+      }
+      setState((prev) => {
+        const count = countTasksWithLabel(prev.tasks, normalized)
+        if (!canDeleteLabel(prev.tasks, normalized)) {
+          result = {
+            ok: false,
+            count,
+            reason: `Cannot delete “${normalized}” — ${count} task${count === 1 ? '' : 's'} still use it. Click the label to see them.`,
+          }
+          return prev
+        }
+        return {
+          ...prev,
+          labels: removeFromLabelCatalog(prev.labels, normalized),
+        }
+      })
+      return result
+    },
+    [],
+  )
 
   const addDependency = useCallback(
     (
@@ -504,12 +545,14 @@ export function useTaskStore() {
     flows: state.flows,
     tasks: state.tasks,
     dependencies: state.dependencies,
+    labels: state.labels,
     upsertProject,
     deleteProject,
     upsertFlow,
     deleteFlow,
     upsertTask,
     deleteTask,
+    deleteLabel,
     addDependency,
     removeDependency,
     resetSample,

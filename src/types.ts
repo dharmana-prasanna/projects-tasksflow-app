@@ -46,6 +46,11 @@ export type StoreState = {
   flows: Flow[]
   tasks: Task[]
   dependencies: Dependency[]
+  /**
+   * Managed label catalog. Labels remain here after the last task unlinks
+   * them so they can be deleted explicitly (only when unused).
+   */
+  labels: string[]
 }
 
 export type InteractionMode = 'select' | 'link'

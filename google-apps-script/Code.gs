@@ -420,7 +420,40 @@ function loadState_() {
       flowId: String(r.flowId),
     }
   })
-  return { projects: projects, flows: flows, tasks: tasks, dependencies: dependencies }
+  var catalogRaw = getMeta_('labelCatalog')
+  var catalog = []
+  if (catalogRaw) {
+    try {
+      var parsedCatalog = JSON.parse(catalogRaw)
+      if (Array.isArray(parsedCatalog)) catalog = parsedCatalog
+    } catch (err) {
+      catalog = parseLabelsCell_(catalogRaw)
+    }
+  }
+  // Always include labels currently on tasks
+  for (var ti = 0; ti < tasks.length; ti++) {
+    var tl = tasks[ti].labels || []
+    for (var li = 0; li < tl.length; li++) {
+      var name = String(tl[li] || '').trim()
+      if (!name) continue
+      var found = false
+      for (var ci = 0; ci < catalog.length; ci++) {
+        if (String(catalog[ci]).toLowerCase() === name.toLowerCase()) {
+          found = true
+          break
+        }
+      }
+      if (!found) catalog.push(name)
+    }
+  }
+
+  return {
+    projects: projects,
+    flows: flows,
+    tasks: tasks,
+    dependencies: dependencies,
+    labels: catalog,
+  }
 }
 
 function saveState_(state, opts) {
@@ -547,6 +580,8 @@ function saveState_(state, opts) {
     ['id', 'fromId', 'toId', 'flowId'],
     state.dependencies || [],
   )
+
+  setMeta_('labelCatalog', JSON.stringify(state.labels || []))
 
   return { ok: true }
 }

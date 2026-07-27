@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   addTaskLabel,
+  canDeleteLabel,
   collectAllLabels,
+  countTasksWithLabel,
+  mergeLabelCatalog,
   normalizeLabel,
   normalizeLabels,
   parseLabelsInput,
+  removeFromLabelCatalog,
   removeTaskLabel,
   taskMatchesLabelFilter,
   toggleLabelFilter,
@@ -57,5 +61,25 @@ describe('REQ-MODEL-005 / REQ-UI-017 — Task labels', () => {
     expect(addTaskLabel(['a'], 'B')).toEqual(['a', 'B'])
     expect(addTaskLabel(['a'], 'A')).toEqual(['a'])
     expect(removeTaskLabel(['a', 'b'], 'A')).toEqual(['b'])
+  })
+
+  it('mergeLabelCatalog keeps unused catalog names', () => {
+    expect(
+      mergeLabelCatalog(['orphan', 'Trip'], [{ labels: ['trip', 'food'] }]),
+    ).toEqual(['food', 'orphan', 'Trip'])
+  })
+
+  it('countTasksWithLabel / canDeleteLabel guard deletes', () => {
+    const tasks = [
+      { labels: ['Trip'] },
+      { labels: ['food'] },
+      { labels: [] },
+    ]
+    expect(countTasksWithLabel(tasks, 'trip')).toBe(1)
+    expect(canDeleteLabel(tasks, 'Trip')).toBe(false)
+    expect(canDeleteLabel(tasks, 'orphan')).toBe(true)
+    expect(removeFromLabelCatalog(['Trip', 'orphan'], 'orphan')).toEqual([
+      'Trip',
+    ])
   })
 })

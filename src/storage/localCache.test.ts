@@ -33,6 +33,7 @@ describe('REQ-LOCAL-001 — Cache key', () => {
           title: 'Cached',
           notes: '',
           projectId: 'p1',
+          labels: [],
           segments: [
             {
               date: '2026-07-18',
@@ -45,6 +46,7 @@ describe('REQ-LOCAL-001 — Cache key', () => {
         },
       ],
       dependencies: [],
+      labels: [],
     }
     saveLocalState(state)
     expect(localStorage.getItem(STORAGE_KEY)).toBeTruthy()

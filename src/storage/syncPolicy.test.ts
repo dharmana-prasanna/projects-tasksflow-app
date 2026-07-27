@@ -15,6 +15,7 @@ const empty: StoreState = {
   flows: [],
   tasks: [],
   dependencies: [],
+  labels: [],
 }
 
 function scheduledLocal(): StoreState {
@@ -27,6 +28,7 @@ function scheduledLocal(): StoreState {
         title: 'Local',
         notes: '',
         projectId: 'p1',
+        labels: [],
         segments: [
           {
             date: '2026-07-18',
@@ -39,6 +41,7 @@ function scheduledLocal(): StoreState {
       },
     ],
     dependencies: [],
+    labels: [],
   }
 }
 
@@ -57,10 +60,12 @@ describe('REQ-SYNC-005 — Prefer local after broken remote', () => {
           title: 'Broken remote',
           notes: '',
           projectId: 'p1',
+          labels: [],
           segments: [],
         },
       ],
       dependencies: [],
+      labels: [],
     }
     expect(shouldPreferLocalOverRemote(remote, scheduledLocal())).toBe(true)
   })

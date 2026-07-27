@@ -243,21 +243,27 @@ export function TaskModal({
           <fieldset className="task-labels">
             <legend>Labels</legend>
             <p className="modal__tip">
-              Add one or more labels (Enter or comma). Use them to filter the board.
+              Add one or more labels (Enter or comma). Use the × to unlink from
+              this task only — click a label in the bar above to list matching
+              tasks.
             </p>
             {labels.length > 0 && (
               <div className="task-labels__chips" aria-label="Task labels">
                 {labels.map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    className="label-chip label-chip--removable"
-                    onClick={() => setLabels((prev) => removeTaskLabel(prev, label))}
-                    title={`Remove ${label}`}
-                  >
-                    {label}
-                    <span aria-hidden="true"> ×</span>
-                  </button>
+                  <span key={label} className="label-chip-wrap label-chip-wrap--static">
+                    <span className="label-chip label-chip--removable">{label}</span>
+                    <button
+                      type="button"
+                      className="label-chip__delete"
+                      onClick={() =>
+                        setLabels((prev) => removeTaskLabel(prev, label))
+                      }
+                      title={`Remove “${label}” from this task`}
+                      aria-label={`Remove ${label} from this task`}
+                    >
+                      ×
+                    </button>
+                  </span>
                 ))}
               </div>
             )}

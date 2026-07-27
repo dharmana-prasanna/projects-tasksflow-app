@@ -1,5 +1,5 @@
 import { FLOW_COLORS, PROJECT_COLORS, SAMPLE_STATE } from '../data/sample'
-import { normalizeLabels } from '../domain/taskLabels'
+import { mergeLabelCatalog, normalizeLabels } from '../domain/taskLabels'
 import { normalizeMinute, singleDaySegment } from '../time'
 import type {
   DaySegment,
@@ -76,6 +76,7 @@ export function migrate(raw: unknown): StoreState | null {
     flows?: Flow[]
     tasks?: LegacyTask[]
     dependencies?: LegacyDep[]
+    labels?: unknown
   }
   if (!Array.isArray(parsed.tasks) || !Array.isArray(parsed.dependencies)) {
     return null
@@ -150,5 +151,10 @@ export function migrate(raw: unknown): StoreState | null {
     }
   })
 
-  return { projects, flows, tasks, dependencies }
+  const labels = mergeLabelCatalog(
+    Array.isArray(parsed.labels) ? parsed.labels.map(String) : [],
+    tasks,
+  )
+
+  return { projects, flows, tasks, dependencies, labels }
 }

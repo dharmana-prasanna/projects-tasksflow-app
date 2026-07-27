@@ -18,7 +18,7 @@ import { StorageModal } from './components/StorageModal'
 import { TaskModal } from './components/TaskModal'
 import { FLOW_COLORS, PROJECT_COLORS } from './data/sample'
 import {
-  collectAllLabels,
+  mergeLabelCatalog,
   taskMatchesLabelFilter,
   toggleLabelFilter,
 } from './domain/taskLabels'
@@ -41,12 +41,14 @@ export default function App({ onLock }: AppProps) {
     flows,
     tasks,
     dependencies,
+    labels: labelCatalog,
     upsertProject,
     deleteProject,
     upsertFlow,
     deleteFlow,
     upsertTask,
     deleteTask,
+    deleteLabel,
     addDependency,
     removeDependency,
     resetSample,
@@ -125,7 +127,10 @@ export default function App({ onLock }: AppProps) {
     [tasks, projectColor],
   )
 
-  const allLabels = useMemo(() => collectAllLabels(tasks), [tasks])
+  const allLabels = useMemo(
+    () => mergeLabelCatalog(labelCatalog, tasks),
+    [labelCatalog, tasks],
+  )
 
   const visibleTasks = useMemo(() => {
     const byProject =
@@ -452,11 +457,24 @@ export default function App({ onLock }: AppProps) {
 
         <LabelBar
           labels={allLabels}
+          tasks={tasks}
           selected={labelFilter}
           onToggle={(label) =>
             setLabelFilter((prev) => toggleLabelFilter(prev, label))
           }
           onClear={() => setLabelFilter([])}
+          onDelete={(label) => {
+            const result = deleteLabel(label)
+            if (!result.ok) {
+              setLabelFilter([label])
+              showToast(result.reason)
+              return
+            }
+            setLabelFilter((prev) =>
+              prev.filter((s) => s.toLowerCase() !== label.toLowerCase()),
+            )
+            showToast(`Deleted label “${label}”`)
+          }}
         />
 
         <FlowBar

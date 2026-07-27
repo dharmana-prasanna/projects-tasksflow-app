@@ -61,6 +61,34 @@ describe('REQ-LOCAL-002 / REQ-MODEL-* — Migration', () => {
       dependencies: [],
     })
     expect(state!.tasks[0].labels).toEqual(['food', 'Trip'])
+    expect(state!.labels).toEqual(['food', 'Trip'])
+  })
+
+  it('keeps unused catalog labels on migrate', () => {
+    const state = migrate({
+      projects: [{ id: 'p1', name: 'Alpha', color: '#111' }],
+      flows: [{ id: 'f1', name: 'Main', color: '#222', projectId: 'p1' }],
+      tasks: [
+        {
+          id: 't1',
+          title: 'Labeled',
+          projectId: 'p1',
+          labels: ['food'],
+          segments: [
+            {
+              date: '2026-07-18',
+              startHour: 9,
+              startMinute: 0,
+              endHour: 10,
+              endMinute: 0,
+            },
+          ],
+        },
+      ],
+      dependencies: [],
+      labels: ['orphan', 'food'],
+    })
+    expect(state!.labels).toEqual(['food', 'orphan'])
   })
 
   it('keeps and normalizes existing segments', () => {

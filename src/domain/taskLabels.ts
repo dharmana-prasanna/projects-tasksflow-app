@@ -47,6 +47,44 @@ export function collectAllLabels(
   return normalizeLabels(tasks.flatMap((t) => t.labels ?? []))
 }
 
+/** Union of catalog + labels currently on tasks. */
+export function mergeLabelCatalog(
+  catalog: string[] | undefined,
+  tasks: { labels?: string[] }[],
+): string[] {
+  return normalizeLabels([...(catalog ?? []), ...tasks.flatMap((t) => t.labels ?? [])])
+}
+
+/** How many tasks carry this label (case-insensitive). */
+export function countTasksWithLabel(
+  tasks: { labels?: string[] }[],
+  label: string,
+): number {
+  const key = normalizeLabel(label)?.toLowerCase()
+  if (!key) return 0
+  return tasks.filter((t) =>
+    (t.labels ?? []).some((l) => normalizeLabel(l)?.toLowerCase() === key),
+  ).length
+}
+
+/** A catalog label may be deleted only when no task still uses it. */
+export function canDeleteLabel(
+  tasks: { labels?: string[] }[],
+  label: string,
+): boolean {
+  return countTasksWithLabel(tasks, label) === 0
+}
+
+/** Remove one name from the catalog (no-op if missing). */
+export function removeFromLabelCatalog(
+  catalog: string[],
+  label: string,
+): string[] {
+  const key = normalizeLabel(label)?.toLowerCase()
+  if (!key) return normalizeLabels(catalog)
+  return normalizeLabels(catalog.filter((l) => l.toLowerCase() !== key))
+}
+
 /**
  * Filter: empty `selected` → all tasks pass.
  * Otherwise task must include **any** selected label (OR, case-insensitive).
