@@ -115,6 +115,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - New task modal supports title, project, start/end dates, start/end times, notes.
 - Multi-day tasks show a per-day start/end editor.
 - Board create via slot select pre-fills segment times.
+- When editing an existing task, **Delete** sits in the **sticky modal header** (next to Close) so it stays reachable without scrolling on mobile; Cancel/Save remain in the footer.
 
 ### REQ-UI-013 — Pick dependents in task editor
 - Task modal lists other existing tasks as **Dependent tasks** (multi-select checkboxes).
@@ -313,7 +314,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 | Dep arrows  | REQ-UI-010                                           | `src/domain/arrowGeometry.test.ts`                 |
 | Chrome panel| REQ-UI-011, REQ-LOCAL-005                            | `src/chromePrefs.test.ts`                          |
 | Graph view  | REQ-UI-012, REQ-LOCAL-006, REQ-LOCAL-007             | `src/domain/graphLayout.test.ts`, `src/viewPrefs.test.ts`, `src/domain/arrowGeometry.test.ts`, `src/graphCurvePrefs.test.ts` |
-| Task deps   | REQ-UI-013                                           | `src/domain/taskDependents.test.ts`                |
+| Task modal  | REQ-UI-004, REQ-UI-013                               | `src/taskModal.layout.test.ts`, `src/domain/taskDependents.test.ts` |
 | Auth gate   | REQ-AUTH-001, REQ-AUTH-002                           | `src/auth/passwordGate.test.ts`                    |
 | Local cache | REQ-LOCAL-001, REQ-LOCAL-003                         | `src/storage/localCache.test.ts`                   |
 | Sync policy | REQ-SYNC-005                                         | `src/storage/syncPolicy.test.ts`                   |

@@ -1344,7 +1344,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.85rem;
+  gap: 0.5rem;
+  margin: -0.15rem -0.15rem 0.85rem;
+  padding: 0.15rem 0.15rem 0.65rem;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fbfcfd;
+  box-shadow: 0 1px 0 var(--line-soft);
 }
 
 .modal__header h2 {
@@ -1352,6 +1359,19 @@
   font-family: var(--font-display);
   font-size: 1.35rem;
   font-weight: 600;
+  min-width: 0;
+}
+
+.modal__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.btn--header-delete {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
 }
 
 .icon-btn {

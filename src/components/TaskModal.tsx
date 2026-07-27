@@ -172,9 +172,25 @@ export function TaskModal({
       >
         <header className="modal__header">
           <h2 id={titleId}>{isEdit ? 'Edit task' : 'New task'}</h2>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
-            ×
-          </button>
+          <div className="modal__header-actions">
+            {isEdit && onDelete && initial.id && (
+              <button
+                type="button"
+                className="btn btn--danger btn--header-delete"
+                onClick={() => onDelete(initial.id!)}
+              >
+                Delete
+              </button>
+            )}
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={onClose}
+              aria-label="Close"
+            >
+              ×
+            </button>
+          </div>
         </header>
 
         <form className="modal__form" onSubmit={handleSubmit}>
@@ -418,15 +434,6 @@ export function TaskModal({
           </fieldset>
 
           <div className="modal__actions">
-            {isEdit && onDelete && initial.id && (
-              <button
-                type="button"
-                className="btn btn--danger"
-                onClick={() => onDelete(initial.id!)}
-              >
-                Delete
-              </button>
-            )}
             <div className="modal__actions-right">
               <button type="button" className="btn btn--ghost" onClick={onClose}>
                 Cancel
