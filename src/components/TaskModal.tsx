@@ -3,6 +3,7 @@ import { useEffect, useId, useMemo, useState } from 'react'
 import {
   currentDependentIds,
   eligibleDependentTasks,
+  filterDependentTasks,
   toggleId,
 } from '../domain/taskDependents'
 import {
@@ -56,6 +57,7 @@ export function TaskModal({
   const [endDate, setEndDate] = useState('')
   const [segments, setSegments] = useState<DaySegment[]>([])
   const [dependentIds, setDependentIds] = useState<string[]>([])
+  const [dependentQuery, setDependentQuery] = useState('')
 
   const activeFlow = activeFlowId
     ? flows.find((f) => f.id === activeFlowId)
@@ -66,6 +68,7 @@ export function TaskModal({
     setTitle(initial.title ?? '')
     setNotes(initial.notes ?? '')
     setProjectId(initial.projectId ?? projects[0]?.id ?? '')
+    setDependentQuery('')
 
     const segs =
       initial.segments && initial.segments.length > 0
@@ -98,6 +101,10 @@ export function TaskModal({
   const candidates = useMemo(
     () => eligibleDependentTasks(tasks, initial?.id),
     [tasks, initial?.id],
+  )
+  const visibleCandidates = useMemo(
+    () => filterDependentTasks(candidates, dependentQuery),
+    [candidates, dependentQuery],
   )
 
   const rangeLabel = useMemo(() => {
@@ -363,33 +370,49 @@ export function TaskModal({
                   On flow <strong>{activeFlow.name}</strong>, check tasks that
                   depend on this one (creates arrows this → selected).
                 </p>
-                <div
-                  className="dependents__list"
-                  role="group"
-                  aria-label="Select dependent tasks"
-                >
-                  {candidates.map((t) => {
-                    const checked = dependentIds.includes(t.id)
-                    const project = projects.find((p) => p.id === t.projectId)
-                    return (
-                      <label key={t.id} className="dependents__item">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() =>
-                            setDependentIds((prev) => toggleId(prev, t.id))
-                          }
-                        />
-                        <span
-                          className="project-dot"
-                          style={{ background: project?.color ?? '#999' }}
-                          aria-hidden
-                        />
-                        <span className="dependents__title">{t.title}</span>
-                      </label>
-                    )
-                  })}
-                </div>
+                <label className="dependents__search">
+                  Search dependents
+                  <input
+                    type="search"
+                    value={dependentQuery}
+                    onChange={(e) => setDependentQuery(e.target.value)}
+                    placeholder="Filter by title…"
+                    autoComplete="off"
+                  />
+                </label>
+                {visibleCandidates.length === 0 ? (
+                  <p className="modal__tip">
+                    No tasks match “{dependentQuery.trim()}”.
+                  </p>
+                ) : (
+                  <div
+                    className="dependents__list"
+                    role="group"
+                    aria-label="Select dependent tasks"
+                  >
+                    {visibleCandidates.map((t) => {
+                      const checked = dependentIds.includes(t.id)
+                      const project = projects.find((p) => p.id === t.projectId)
+                      return (
+                        <label key={t.id} className="dependents__item">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setDependentIds((prev) => toggleId(prev, t.id))
+                            }
+                          />
+                          <span
+                            className="project-dot"
+                            style={{ background: project?.color ?? '#999' }}
+                            aria-hidden
+                          />
+                          <span className="dependents__title">{t.title}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
               </>
             )}
           </fieldset>

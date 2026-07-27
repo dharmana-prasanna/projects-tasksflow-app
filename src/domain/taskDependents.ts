@@ -11,6 +11,19 @@ export function eligibleDependentTasks(
     .sort((a, b) => a.title.localeCompare(b.title) || a.id.localeCompare(b.id))
 }
 
+/**
+ * Filter eligible dependents by a case-insensitive substring of the title.
+ * Empty / whitespace query returns the list unchanged (still sorted).
+ */
+export function filterDependentTasks(
+  tasks: Task[],
+  query: string,
+): Task[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return tasks
+  return tasks.filter((t) => t.title.toLowerCase().includes(q))
+}
+
 /** Task ids already linked as dependents of `fromId` on `flowId`. */
 export function currentDependentIds(
   dependencies: Dependency[],

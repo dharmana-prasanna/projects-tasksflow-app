@@ -1416,6 +1416,29 @@
   padding: 0 0.25rem;
 }
 
+.dependents__search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.dependents__search input {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.65rem;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .dependents__list {
   display: flex;
   flex-direction: column;
