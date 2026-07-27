@@ -132,6 +132,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Board view shows a right-side **Backlog** panel of unscheduled tasks (`isTaskUnscheduled` / empty segments), filtered by the same project + label filters as the board.
 - Users can add backlog tasks from the panel (`+`) without assigning dates/times.
 - Backlog cards are draggable onto calendar slots (same `DndContext` as the board). Drop calls `moveTaskToSlot` (creates a 1-hour segment) and upserts — the task leaves the backlog and appears on the calendar.
+- Scheduled calendar tasks can be dragged **back onto the Backlog** drop target (`BACKLOG_DROP_ID`); drop calls `unscheduleTask` (clears `segments` to `[]`) so the task leaves the calendar and appears in the backlog.
 - Clicking a backlog card opens the task editor.
 - On narrow viewports the panel stacks under the board.
 

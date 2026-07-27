@@ -264,15 +264,17 @@ export default function App({ onLock }: AppProps) {
 
   const handleMoveTask = useCallback(
     (task: Task) => {
-      const wasBacklog = tasks.some(
-        (t) => t.id === task.id && isTaskUnscheduled(t),
-      )
+      const prev = tasks.find((t) => t.id === task.id)
+      const wasBacklog = prev ? isTaskUnscheduled(prev) : false
+      const nowBacklog = isTaskUnscheduled(task)
       upsertTask(task)
-      showToast(
-        wasBacklog
-          ? `Scheduled “${task.title}” from backlog`
-          : `Moved “${task.title}”`,
-      )
+      if (wasBacklog && !nowBacklog) {
+        showToast(`Scheduled “${task.title}” from backlog`)
+      } else if (!wasBacklog && nowBacklog) {
+        showToast(`Moved “${task.title}” to backlog`)
+      } else {
+        showToast(`Moved “${task.title}”`)
+      }
     },
     [upsertTask, tasks],
   )

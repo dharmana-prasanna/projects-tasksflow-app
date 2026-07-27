@@ -25,6 +25,7 @@ import {
   shouldCommitSlotSelect,
   SLOT_SELECT_TOUCH_DELAY_MS,
 } from '../domain/slotSelectGesture'
+import { BACKLOG_DROP_ID, unscheduleTask } from '../domain/unscheduled'
 import {
   formatRange,
   isSegmentStart,
@@ -486,6 +487,16 @@ export function CalendarGrid({
     setActiveTask(null)
     setActiveSegment(null)
     if (!over || !task) return
+
+    const droppedOnBacklog =
+      over.id === BACKLOG_DROP_ID || Boolean(over.data.current?.backlog)
+    if (droppedOnBacklog) {
+      // Already in backlog — no-op. Scheduled → clear segments.
+      if (task.segments.length === 0) return
+      onMoveTask(unscheduleTask(task))
+      return
+    }
+
     const date = over.data.current?.date as string | undefined
     const hour = over.data.current?.hour as number | undefined
     const minute = over.data.current?.minute as number | undefined

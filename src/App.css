@@ -786,6 +786,14 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 250, 252, 0.7));
   box-shadow: 0 12px 28px rgba(20, 40, 55, 0.06);
   overflow: hidden;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.unscheduled-panel--drop-target {
+  border-color: #1f6b5a;
+  background:
+    linear-gradient(180deg, rgba(31, 107, 90, 0.12), rgba(248, 250, 252, 0.85));
+  box-shadow: 0 0 0 2px rgba(31, 107, 90, 0.2);
 }
 
 .unscheduled-panel__header {
