@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   filterScheduledTasks,
   filterUnscheduledTasks,
+  groupUnscheduledByLabel,
   isTaskUnscheduled,
+  UNLABELED_GROUP,
   unscheduleTask,
 } from './unscheduled'
 
@@ -66,5 +68,28 @@ describe('REQ-UI-018 — Unscheduled backlog', () => {
     expect(next.segments).toEqual([])
     expect(next.title).toBe('Recap')
     expect(isTaskUnscheduled(next)).toBe(true)
+  })
+
+  it('groupUnscheduledByLabel groups by each label; Unlabeled last', () => {
+    const groups = groupUnscheduledByLabel([
+      { id: 'a', labels: ['travel'] },
+      { id: 'b', labels: ['kids', 'travel'] },
+      { id: 'c', labels: [] },
+    ])
+    expect(groups.map((g) => g.label)).toEqual([
+      'kids',
+      'travel',
+      UNLABELED_GROUP,
+    ])
+    expect(groups.find((g) => g.label === 'travel')?.tasks.map((t) => t.id)).toEqual([
+      'a',
+      'b',
+    ])
+    expect(groups.find((g) => g.label === 'kids')?.tasks.map((t) => t.id)).toEqual([
+      'b',
+    ])
+    expect(
+      groups.find((g) => g.label === UNLABELED_GROUP)?.tasks.map((t) => t.id),
+    ).toEqual(['c'])
   })
 })

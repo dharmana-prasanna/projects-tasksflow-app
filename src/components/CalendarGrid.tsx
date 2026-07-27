@@ -54,6 +54,7 @@ type Props = {
   days: string[]
   tasks: ColoredTask[]
   unscheduledTasks: ColoredTask[]
+  backlogHidden: boolean
   dependencies: ColoredDependency[]
   activeFlowColor?: string
   activeFlowId?: string | null
@@ -65,6 +66,7 @@ type Props = {
     endMinute: number
   }) => void
   onCreateUnscheduled: () => void
+  onToggleBacklog: () => void
   onTaskClick: (task: Task) => void
   onMoveTask: (task: Task) => void
   onLinkTasks: (fromId: string, toId: string) => void
@@ -99,11 +101,13 @@ export function CalendarGrid({
   days,
   tasks,
   unscheduledTasks,
+  backlogHidden,
   dependencies,
   activeFlowColor = '#c48a12',
   activeFlowId = null,
   onCreateTask,
   onCreateUnscheduled,
+  onToggleBacklog,
   onTaskClick,
   onMoveTask,
   onLinkTasks,
@@ -681,6 +685,8 @@ export function CalendarGrid({
 
       <UnscheduledPanel
         tasks={unscheduledTasks}
+        hidden={backlogHidden}
+        onToggleHidden={onToggleBacklog}
         onCreate={onCreateUnscheduled}
         onTaskClick={onTaskClick}
       />

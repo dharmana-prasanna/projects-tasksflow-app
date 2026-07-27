@@ -2,7 +2,9 @@ import { addDays, eachDayOfInterval, format, parseISO } from 'date-fns'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   isNarrowViewport,
+  loadBacklogHidden,
   loadChromeMinimized,
+  saveBacklogHidden,
   saveChromeMinimized,
 } from './chromePrefs'
 import { DndContext } from '@dnd-kit/core'
@@ -81,6 +83,7 @@ export default function App({ onLock }: AppProps) {
   const [labelFilter, setLabelFilter] = useState<string[]>([])
   const [activeFlowId, setActiveFlowId] = useState<string | null>(null)
   const [chromeMinimized, setChromeMinimized] = useState(loadChromeMinimized)
+  const [backlogHidden, setBacklogHidden] = useState(loadBacklogHidden)
 
   // Phones: start with projects/flows collapsed so the calendar gets the screen.
   useEffect(() => {
@@ -90,6 +93,14 @@ export default function App({ onLock }: AppProps) {
   function selectMainView(view: MainView) {
     setMainView(view)
     saveMainView(view)
+  }
+
+  function toggleBacklogHidden() {
+    setBacklogHidden((prev) => {
+      const next = !prev
+      saveBacklogHidden(next)
+      return next
+    })
   }
   const [toast, setToast] = useState<string | null>(null)
   const [storageOpen, setStorageOpen] = useState(false)
@@ -579,11 +590,13 @@ export default function App({ onLock }: AppProps) {
           days={days}
           tasks={scheduledTasks}
           unscheduledTasks={unscheduledTasks}
+          backlogHidden={backlogHidden}
           dependencies={visibleDependencies}
           activeFlowColor={activeFlow?.color}
           activeFlowId={activeFlowId}
           onCreateTask={handleCreateTask}
           onCreateUnscheduled={handleCreateUnscheduled}
+          onToggleBacklog={toggleBacklogHidden}
           onTaskClick={(task) => setEditingTask(task)}
           onMoveTask={handleMoveTask}
           onLinkTasks={handleLinkTasks}
@@ -607,6 +620,8 @@ export default function App({ onLock }: AppProps) {
             />
             <UnscheduledPanel
               tasks={unscheduledTasks}
+              hidden={backlogHidden}
+              onToggleHidden={toggleBacklogHidden}
               onCreate={handleCreateUnscheduled}
               onTaskClick={(task) => setEditingTask(task)}
             />

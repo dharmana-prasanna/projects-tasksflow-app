@@ -3,9 +3,12 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  BACKLOG_HIDDEN_KEY,
   CHROME_MINIMIZED_KEY,
   isNarrowViewport,
+  loadBacklogHidden,
   loadChromeMinimized,
+  saveBacklogHidden,
   saveChromeMinimized,
 } from './chromePrefs'
 
@@ -43,6 +46,25 @@ describe('REQ-UI-011 / REQ-LOCAL-005 — Minimizable chrome', () => {
     expect(css).toMatch(/\.chrome-panel\s*\{/s)
     expect(css).toMatch(/\.chrome-panel--minimized\s*\{/s)
     expect(css).toMatch(/\.chrome-panel__toggle\s*\{/s)
+  })
+})
+
+describe('REQ-UI-018 / REQ-LOCAL-008 — Hideable backlog rail', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('defaults backlog to visible and persists hide preference', () => {
+    expect(BACKLOG_HIDDEN_KEY).toBe('flowboard-backlog-hidden')
+    expect(loadBacklogHidden()).toBe(false)
+    saveBacklogHidden(true)
+    expect(loadBacklogHidden()).toBe(true)
+    saveBacklogHidden(false)
+    expect(loadBacklogHidden()).toBe(false)
   })
 })
 

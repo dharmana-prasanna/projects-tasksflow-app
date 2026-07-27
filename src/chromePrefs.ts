@@ -37,3 +37,18 @@ export function loadChromeMinimized(
 export function saveChromeMinimized(minimized: boolean): void {
   localStorage.setItem(CHROME_MINIMIZED_KEY, minimized ? 'true' : 'false')
 }
+
+export const BACKLOG_HIDDEN_KEY = 'flowboard-backlog-hidden'
+
+/** Whether the right-side backlog rail is collapsed. Default: visible. */
+export function loadBacklogHidden(): boolean {
+  try {
+    return localStorage.getItem(BACKLOG_HIDDEN_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+export function saveBacklogHidden(hidden: boolean): void {
+  localStorage.setItem(BACKLOG_HIDDEN_KEY, hidden ? 'true' : 'false')
+}

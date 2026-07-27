@@ -5,15 +5,17 @@ import type { ColoredTask, Task } from '../types'
 
 type Props = {
   task: ColoredTask
+  /** Disambiguates drag ids when a task appears under multiple label groups. */
+  groupKey?: string
   onTaskClick: (task: Task) => void
 }
 
 /** Draggable backlog card — drop onto a calendar slot to schedule. */
-export function UnscheduledTaskCard({ task, onTaskClick }: Props) {
+export function UnscheduledTaskCard({ task, groupKey, onTaskClick }: Props) {
   const dragged = useRef(false)
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
-      id: `${task.id}::unscheduled`,
+      id: `${task.id}::unscheduled::${groupKey ?? '_'}`,
       data: { task, unscheduled: true },
     })
 

@@ -108,16 +108,19 @@ describe('REQ-UI-014 — Mobile board scrolling', () => {
     expect(mobile).toMatch(/\.topbar__optional\s*\{[^}]*display:\s*none/s)
   })
 
-  it('keeps the backlog list scrollable within a bounded panel', () => {
+  it('keeps the backlog list scrollable within a bounded right rail', () => {
     expect(appCss).toMatch(
-      /\.unscheduled-panel__list\s*\{[^}]*overflow-y:\s*auto/s,
+      /\.unscheduled-panel__scroll\s*\{[^}]*overflow-y:\s*auto/s,
     )
     expect(appCss).toMatch(
-      /\.unscheduled-panel__list\s*\{[^}]*flex:\s*1\s+1\s+0/s,
+      /\.unscheduled-panel__scroll\s*\{[^}]*flex:\s*1\s+1\s+0/s,
     )
     expect(appCss).toMatch(
       /\.unscheduled-card\s*\{[^}]*touch-action:\s*pan-y/s,
     )
+    expect(appCss).toMatch(/\.unscheduled-panel--collapsed\s*\{/s)
+    const mobile = appCss.match(/@media \(max-width:\s*720px\)\s*\{[\s\S]*$/)?.[0] ?? ''
+    expect(mobile).toMatch(/\.workspace\s*\{[^}]*flex-direction:\s*row/s)
   })
 })
 

@@ -129,14 +129,15 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - When editing an existing task, **Delete** sits in the **sticky modal header** (next to Close) so it stays reachable without scrolling on mobile; Cancel/Save remain in the footer.
 
 ### REQ-UI-018 — Unscheduled backlog panel
-- **Board and Graph** views show a right-side **Backlog** panel of unscheduled tasks (`isTaskUnscheduled` / empty segments), filtered by the same project + label filters as the main view.
+- **Board and Graph** views show a **right-side** **Backlog** rail of unscheduled tasks (`isTaskUnscheduled` / empty segments), filtered by the same project + label filters as the main view. It stays on the right on narrow viewports (does not move under the board).
+- Backlog tasks are **grouped by label** (`groupUnscheduledByLabel`); multi-label tasks appear under each label; tasks with no labels under **Unlabeled** (last). Groups are scrollable with sticky group headers.
+- Users can **hide/show** the rail (`▹` / vertical Backlog tab); preference persists in `flowboard-backlog-hidden` (REQ-LOCAL-008). Collapsed rail remains a drop target and shows the backlog count.
 - Users can add backlog tasks from the panel (`+`) without assigning dates/times.
 - In **Board** view, backlog cards are draggable onto calendar slots (same `DndContext` as the board). Drop calls `moveTaskToSlot` (creates a 1-hour segment) and upserts — the task leaves the backlog and appears on the calendar.
 - In **Board** view, scheduled calendar tasks can be dragged **back onto the Backlog** drop target (`BACKLOG_DROP_ID`); drop calls `unscheduleTask` (clears `segments` to `[]`) so the task leaves the calendar and appears in the backlog.
 - In **Graph** view the same backlog list is shown for browse/add/edit; drag-to-schedule onto day columns is board-only (switch to Board to drop onto time slots).
 - Clicking a backlog card opens the task editor.
-- The backlog panel fills the workspace height (desktop) / a bounded share of the viewport (mobile); its task list scrolls (`overflow-y: auto`) so many backlog items stay reachable. Cards use `touch-action: pan-y` so the list can scroll; hold-to-drag still schedules/unschedules on the board.
-- On narrow viewports the panel stacks under the board/graph.
+- The open backlog panel fills workspace height; its grouped list scrolls (`overflow-y: auto`). Cards use `touch-action: pan-y` so the list can scroll; hold-to-drag still schedules/unschedules on the board.
 
 ### REQ-UI-017 — Filter by labels
 - Chrome shows a **LabelBar** of catalog labels plus **All labels**.
@@ -273,6 +274,10 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Global curve strength: `flowboard-graph-curve`.
 - Per-edge bend offsets: `flowboard-graph-bends`.
 
+### REQ-LOCAL-008 — Backlog visibility preference
+- Backlog rail hidden state persists under `flowboard-backlog-hidden` (`true` / `false`).
+- Default when unset: visible (`false`).
+
 ---
 
 ## 5. Persistence — Google Sheets / Calendar (Apps Script contract)
@@ -341,7 +346,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 | Time grid   | REQ-TIME-001 … 008                                   | `src/time.test.ts`                                 |
 | Model migrate | REQ-LOCAL-002, REQ-MODEL-*                         | `src/storage/migrate.test.ts`                      |
 | Task labels | REQ-MODEL-005, REQ-UI-017                            | `src/domain/taskLabels.test.ts`                    |
-| Unscheduled backlog | REQ-UI-018, REQ-MODEL-003                      | `src/domain/unscheduled.test.ts`, `src/time.test.ts` |
+| Unscheduled backlog | REQ-UI-018, REQ-MODEL-003, REQ-LOCAL-008       | `src/domain/unscheduled.test.ts`, `src/chromePrefs.test.ts`, `src/time.test.ts` |
 | Dependencies| REQ-DEP-001 … 005, REQ-MODEL-004                     | `src/domain/dependencies.test.ts`                  |
 | Slot select | REQ-TIME-007, REQ-UI-016                             | `src/time.test.ts`, `src/domain/slotSelectGesture.test.ts` |
 | Board layout| REQ-UI-008, REQ-UI-009, REQ-UI-014, REQ-UI-015, REQ-LOCAL-004 | `src/boardLayout.test.ts`                   |
