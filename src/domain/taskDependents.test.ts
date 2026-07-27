@@ -118,4 +118,14 @@ describe('REQ-UI-013 — Pick dependents in task editor', () => {
     expect(src).toMatch(/dependents__search/)
     expect(src).toMatch(/dependentQuery/)
   })
+
+  it('dependents search is compact and titles wrap', () => {
+    const css = readFileSync(resolve(here, '../App.css'), 'utf8')
+    expect(css).toMatch(/\.dependents__search\s*\{[^}]*max-width:\s*16rem/s)
+    expect(css).toMatch(/\.dependents__title\s*\{[^}]*white-space:\s*normal/s)
+    expect(css).toMatch(/\.dependents__title\s*\{[^}]*overflow-wrap:\s*anywhere/s)
+    expect(css).not.toMatch(
+      /\.dependents__title\s*\{[^}]*white-space:\s*nowrap/s,
+    )
+  })
 })
