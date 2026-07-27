@@ -129,13 +129,14 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - When editing an existing task, **Delete** sits in the **sticky modal header** (next to Close) so it stays reachable without scrolling on mobile; Cancel/Save remain in the footer.
 
 ### REQ-UI-018 — Unscheduled backlog panel
-- Board view shows a right-side **Backlog** panel of unscheduled tasks (`isTaskUnscheduled` / empty segments), filtered by the same project + label filters as the board.
+- **Board and Graph** views show a right-side **Backlog** panel of unscheduled tasks (`isTaskUnscheduled` / empty segments), filtered by the same project + label filters as the main view.
 - Users can add backlog tasks from the panel (`+`) without assigning dates/times.
-- Backlog cards are draggable onto calendar slots (same `DndContext` as the board). Drop calls `moveTaskToSlot` (creates a 1-hour segment) and upserts — the task leaves the backlog and appears on the calendar.
-- Scheduled calendar tasks can be dragged **back onto the Backlog** drop target (`BACKLOG_DROP_ID`); drop calls `unscheduleTask` (clears `segments` to `[]`) so the task leaves the calendar and appears in the backlog.
+- In **Board** view, backlog cards are draggable onto calendar slots (same `DndContext` as the board). Drop calls `moveTaskToSlot` (creates a 1-hour segment) and upserts — the task leaves the backlog and appears on the calendar.
+- In **Board** view, scheduled calendar tasks can be dragged **back onto the Backlog** drop target (`BACKLOG_DROP_ID`); drop calls `unscheduleTask` (clears `segments` to `[]`) so the task leaves the calendar and appears in the backlog.
+- In **Graph** view the same backlog list is shown for browse/add/edit; drag-to-schedule onto day columns is board-only (switch to Board to drop onto time slots).
 - Clicking a backlog card opens the task editor.
-- The backlog panel fills the workspace height (desktop) / a bounded share of the viewport (mobile); its task list scrolls (`overflow-y: auto`) so many backlog items stay reachable. Cards use `touch-action: pan-y` so the list can scroll; hold-to-drag still schedules/unschedules.
-- On narrow viewports the panel stacks under the board.
+- The backlog panel fills the workspace height (desktop) / a bounded share of the viewport (mobile); its task list scrolls (`overflow-y: auto`) so many backlog items stay reachable. Cards use `touch-action: pan-y` so the list can scroll; hold-to-drag still schedules/unschedules on the board.
+- On narrow viewports the panel stacks under the board/graph.
 
 ### REQ-UI-017 — Filter by labels
 - Chrome shows a **LabelBar** of catalog labels plus **All labels**.
@@ -199,6 +200,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - **Graph** shows a task dependency graph: nodes are tasks (title + project color), edges are dependencies (flow color).
 - Graph has **no time rows** (no hour/15‑minute grid).
 - Graph keeps **day columns** for every date that has **at least one task** (`daysWithTasks`); empty days are omitted.
+- Graph view includes the same right-side **Backlog** panel as Board (REQ-UI-018) for unscheduled tasks.
 - Each task appears once under its earliest segment date (`taskColumnDate` / `primarySegment`).
 - Each node card shows **start time (bottom-left)** and **end time (bottom-right)** for that column day’s segment (`formatSlot`), with the title above — no full time grid.
 - Layout via `layoutDependencyGraph` (day columns left-to-right; tasks stacked **by start time** within a day, earliest first).

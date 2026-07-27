@@ -5,12 +5,14 @@ import {
   loadChromeMinimized,
   saveChromeMinimized,
 } from './chromePrefs'
+import { DndContext } from '@dnd-kit/core'
 import { CalendarGrid } from './components/CalendarGrid'
 import { ChromePanel } from './components/ChromePanel'
 import { LabelBar } from './components/LabelBar'
 import { LabelFilterBanner } from './components/LabelFilterBanner'
 import type { ColoredDependency } from './components/DependencyArrows'
 import { DependencyGraph } from './components/DependencyGraph'
+import { UnscheduledPanel } from './components/UnscheduledPanel'
 import { FlowBar } from './components/FlowBar'
 import { FlowModal } from './components/FlowModal'
 import { ProjectBar } from './components/ProjectBar'
@@ -555,6 +557,8 @@ export default function App({ onLock }: AppProps) {
             <>
               Graph shows day columns (only days with tasks) and dependency
               arrows — no time rows. Click a task to edit or pick dependents.
+              Use the Backlog panel for unscheduled tasks (switch to Board to
+              drag them onto the calendar).
             </>
           )}
         </p>
@@ -589,16 +593,25 @@ export default function App({ onLock }: AppProps) {
           }}
         />
       ) : (
-        <DependencyGraph
-          tasks={scheduledTasks}
-          dependencies={visibleDependencies}
-          activeFlowId={activeFlowId}
-          onTaskClick={(task) => setEditingTask(task)}
-          onRemoveDependency={(id) => {
-            removeDependency(id)
-            showToast('Dependency removed')
-          }}
-        />
+        <DndContext>
+          <div className="workspace">
+            <DependencyGraph
+              tasks={scheduledTasks}
+              dependencies={visibleDependencies}
+              activeFlowId={activeFlowId}
+              onTaskClick={(task) => setEditingTask(task)}
+              onRemoveDependency={(id) => {
+                removeDependency(id)
+                showToast('Dependency removed')
+              }}
+            />
+            <UnscheduledPanel
+              tasks={unscheduledTasks}
+              onCreate={handleCreateUnscheduled}
+              onTaskClick={(task) => setEditingTask(task)}
+            />
+          </div>
+        </DndContext>
       )}
 
       <TaskModal
