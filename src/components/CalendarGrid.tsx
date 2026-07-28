@@ -25,18 +25,22 @@ import {
   shouldCommitSlotSelect,
   SLOT_SELECT_TOUCH_DELAY_MS,
 } from '../domain/slotSelectGesture'
-import { BACKLOG_DROP_ID, unscheduleTask } from '../domain/unscheduled'
+import {
+  moveSelectedTasksToSlot,
+  shouldToggleTaskSelection,
+  unscheduleSelectedTasks,
+} from '../domain/bulkTasks'
+import { BACKLOG_DROP_ID } from '../domain/unscheduled'
 import {
   formatRange,
   isSegmentStart,
-  moveTaskToSlot,
   primarySegment,
   segmentOccupiesSlot,
   selectionToRange,
   slotIndex,
   TIME_SLOTS,
 } from '../time'
-import type { ColoredTask, DaySegment, Task } from '../types'
+import type { ColoredTask, DaySegment, Task, TaskActivateOptions } from '../types'
 import {
   DependencyArrows,
   type ColoredDependency,
@@ -67,8 +71,9 @@ type Props = {
   }) => void
   onCreateUnscheduled: () => void
   onToggleBacklog: () => void
-  onTaskClick: (task: Task) => void
-  onMoveTask: (task: Task) => void
+  selectedTaskIds?: string[]
+  onTaskClick: (task: Task, options?: TaskActivateOptions) => void
+  onMoveTasks: (tasks: Task[]) => void
   onLinkTasks: (fromId: string, toId: string) => void
   onRemoveDependency: (dependencyId: string) => void
 }
@@ -108,8 +113,9 @@ export function CalendarGrid({
   onCreateTask,
   onCreateUnscheduled,
   onToggleBacklog,
+  selectedTaskIds = [],
   onTaskClick,
-  onMoveTask,
+  onMoveTasks,
   onLinkTasks,
   onRemoveDependency,
 }: Props) {
@@ -118,6 +124,10 @@ export function CalendarGrid({
   const scrolledToDayHours = useRef(false)
   const [activeTask, setActiveTask] = useState<ColoredTask | null>(null)
   const [activeSegment, setActiveSegment] = useState<DaySegment | null>(null)
+  const selectionActive = selectedTaskIds.length > 0
+  const selectedSet = useMemo(() => new Set(selectedTaskIds), [selectedTaskIds])
+  const multiDragCount =
+    activeTask && selectedSet.has(activeTask.id) ? selectedTaskIds.length : 1
   const [linkSession, setLinkSession] = useState<LinkSession | null>(null)
   const linkRef = useRef<LinkSession | null>(null)
   const [slotSelect, setSlotSelect] = useState<SlotSelectSession | null>(null)
@@ -485,6 +495,16 @@ export function CalendarGrid({
     }
   }
 
+  function resolveMoveGroup(dragged: ColoredTask): ColoredTask[] {
+    const pool = [...tasks, ...unscheduledTasks]
+    if (selectedSet.has(dragged.id) && selectedTaskIds.length > 1) {
+      return selectedTaskIds
+        .map((id) => pool.find((t) => t.id === id))
+        .filter((t): t is ColoredTask => Boolean(t))
+    }
+    return [dragged]
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     const task = active.data.current?.task as ColoredTask | undefined
@@ -492,12 +512,13 @@ export function CalendarGrid({
     setActiveSegment(null)
     if (!over || !task) return
 
+    const group = resolveMoveGroup(task)
     const droppedOnBacklog =
       over.id === BACKLOG_DROP_ID || Boolean(over.data.current?.backlog)
     if (droppedOnBacklog) {
-      // Already in backlog — no-op. Scheduled → clear segments.
-      if (task.segments.length === 0) return
-      onMoveTask(unscheduleTask(task))
+      const next = unscheduleSelectedTasks(group)
+      if (next.length === 0) return
+      onMoveTasks(next)
       return
     }
 
@@ -505,8 +526,7 @@ export function CalendarGrid({
     const hour = over.data.current?.hour as number | undefined
     const minute = over.data.current?.minute as number | undefined
     if (!date || hour == null || minute == null) return
-    const moved = moveTaskToSlot(task, date, hour, minute)
-    onMoveTask(moved)
+    onMoveTasks(moveSelectedTasksToSlot(group, task.id, date, hour, minute))
   }
 
   function startLink(task: Task, e: React.PointerEvent<HTMLButtonElement>) {
@@ -644,7 +664,12 @@ export function CalendarGrid({
                         onClick={(e) => {
                           e.stopPropagation()
                           const cont = items.find((i) => !i.isStart)
-                          if (cont) onTaskClick(cont.task)
+                          if (!cont) return
+                          const toggle = shouldToggleTaskSelection(
+                            e,
+                            selectionActive,
+                          )
+                          onTaskClick(cont.task, { toggle })
                         }}
                       />
                     )}
@@ -655,6 +680,8 @@ export function CalendarGrid({
                           key={`${task.id}-${segment.date}`}
                           task={task}
                           segment={segment}
+                          selected={selectedSet.has(task.id)}
+                          selectionActive={selectionActive}
                           isLinkSource={linkSession?.fromId === task.id}
                           isLinkTarget={linkSession?.overTaskId === task.id}
                           onTaskClick={onTaskClick}
@@ -688,6 +715,7 @@ export function CalendarGrid({
         hidden={backlogHidden}
         onToggleHidden={onToggleBacklog}
         onCreate={onCreateUnscheduled}
+        selectedTaskIds={selectedTaskIds}
         onTaskClick={onTaskClick}
       />
       </div>
@@ -704,6 +732,9 @@ export function CalendarGrid({
                 ? formatRange(activeSegment)
                 : 'Drop on a time slot'}
             </span>
+            {multiDragCount > 1 && (
+              <span className="task__badge">+{multiDragCount - 1}</span>
+            )}
           </div>
         ) : null}
       </DragOverlay>

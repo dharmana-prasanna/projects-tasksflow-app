@@ -60,3 +60,8 @@ export type StoreState = {
 }
 
 export type InteractionMode = 'select' | 'link'
+
+/** Options when activating a task (open editor vs toggle multi-select). */
+export type TaskActivateOptions = {
+  toggle?: boolean
+}

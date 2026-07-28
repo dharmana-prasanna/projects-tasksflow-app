@@ -1,21 +1,26 @@
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useRef } from 'react'
+import { shouldToggleTaskSelection } from '../domain/bulkTasks'
 import { formatRange } from '../time'
-import type { ColoredTask, DaySegment, Task } from '../types'
+import type { ColoredTask, DaySegment, Task, TaskActivateOptions } from '../types'
 
 type Props = {
   task: ColoredTask
   segment: DaySegment
+  selected?: boolean
+  selectionActive?: boolean
   isLinkTarget?: boolean
   isLinkSource?: boolean
-  onTaskClick: (task: Task) => void
+  onTaskClick: (task: Task, options?: TaskActivateOptions) => void
   onLinkPointerDown: (task: Task, e: React.PointerEvent<HTMLButtonElement>) => void
 }
 
 export function DraggableTask({
   task,
   segment,
+  selected = false,
+  selectionActive = false,
   isLinkTarget,
   isLinkSource,
   onTaskClick,
@@ -49,6 +54,7 @@ export function DraggableTask({
       className={[
         'task',
         'task--draggable',
+        selected ? 'task--selected' : '',
         isLinkSource ? 'task--link-source' : '',
         isLinkTarget ? 'task--link-target' : '',
         isDragging ? 'task--dragging' : '',
@@ -57,6 +63,19 @@ export function DraggableTask({
         .join(' ')}
       style={style}
     >
+      <button
+        type="button"
+        className="task__select"
+        aria-label={selected ? `Deselect ${task.title}` : `Select ${task.title}`}
+        aria-pressed={selected}
+        title={selected ? 'Deselect' : 'Select'}
+        onClick={(e) => {
+          e.stopPropagation()
+          onTaskClick(task, { toggle: true })
+        }}
+      >
+        {selected ? '✓' : ''}
+      </button>
       <button
         type="button"
         className="task__body"
@@ -68,7 +87,8 @@ export function DraggableTask({
             dragged.current = false
             return
           }
-          onTaskClick(task)
+          const toggle = shouldToggleTaskSelection(e, selectionActive)
+          onTaskClick(task, { toggle })
         }}
       >
         <span className="task__title">{task.title}</span>

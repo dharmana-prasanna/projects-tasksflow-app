@@ -8,6 +8,7 @@ import {
   saveChromeMinimized,
 } from './chromePrefs'
 import { DndContext } from '@dnd-kit/core'
+import { BulkActionBar } from './components/BulkActionBar'
 import { CalendarGrid } from './components/CalendarGrid'
 import { ChromePanel } from './components/ChromePanel'
 import { LabelBar } from './components/LabelBar'
@@ -23,6 +24,11 @@ import { StorageModal } from './components/StorageModal'
 import { TaskModal } from './components/TaskModal'
 import { FLOW_COLORS, PROJECT_COLORS } from './data/sample'
 import {
+  applyBulkLabels,
+  moveTasksToDate,
+  toggleTaskId,
+} from './domain/bulkTasks'
+import {
   mergeLabelCatalog,
   selectLabelFilter,
   taskMatchesLabelFilter,
@@ -35,7 +41,13 @@ import {
 import { planDependentSync } from './domain/taskDependents'
 import { useTaskStore } from './hooks/useTaskStore'
 import { singleDaySegment } from './time'
-import type { ColoredTask, Flow, Project, Task } from './types'
+import type {
+  ColoredTask,
+  Flow,
+  Project,
+  Task,
+  TaskActivateOptions,
+} from './types'
 import { loadMainView, saveMainView, type MainView } from './viewPrefs'
 
 const DAY_SPANS = [1, 3, 7, 10, 15, 30, 60, 90, 180, 365] as const
@@ -57,6 +69,7 @@ export default function App({ onLock }: AppProps) {
     upsertFlow,
     deleteFlow,
     upsertTask,
+    upsertTasks,
     deleteTask,
     registerLabels,
     deleteLabel,
@@ -104,9 +117,37 @@ export default function App({ onLock }: AppProps) {
   }
   const [toast, setToast] = useState<string | null>(null)
   const [storageOpen, setStorageOpen] = useState(false)
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
   const [editingTask, setEditingTask] = useState<Partial<Task> | null>(null)
   const [editingProject, setEditingProject] = useState<Partial<Project> | null>(null)
   const [editingFlow, setEditingFlow] = useState<Partial<Flow> | null>(null)
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && selectedTaskIds.length > 0) {
+        setSelectedTaskIds([])
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selectedTaskIds.length])
+
+  // Drop selection ids that no longer exist (delete / reset).
+  useEffect(() => {
+    const ids = new Set(tasks.map((t) => t.id))
+    setSelectedTaskIds((prev) => {
+      const next = prev.filter((id) => ids.has(id))
+      return next.length === prev.length ? prev : next
+    })
+  }, [tasks])
+
+  const selectedTasks = useMemo(
+    () =>
+      selectedTaskIds
+        .map((id) => tasks.find((t) => t.id === id))
+        .filter((t): t is Task => Boolean(t)),
+    [selectedTaskIds, tasks],
+  )
 
   function toggleChromeMinimized() {
     setChromeMinimized((prev) => {
@@ -275,22 +316,71 @@ export default function App({ onLock }: AppProps) {
     })
   }
 
-  const handleMoveTask = useCallback(
-    (task: Task) => {
-      const prev = tasks.find((t) => t.id === task.id)
-      const wasBacklog = prev ? isTaskUnscheduled(prev) : false
-      const nowBacklog = isTaskUnscheduled(task)
-      upsertTask(task)
-      if (wasBacklog && !nowBacklog) {
-        showToast(`Scheduled “${task.title}” from backlog`)
-      } else if (!wasBacklog && nowBacklog) {
-        showToast(`Moved “${task.title}” to backlog`)
-      } else {
-        showToast(`Moved “${task.title}”`)
+  function handleTaskActivate(task: Task, options?: TaskActivateOptions) {
+    if (options?.toggle) {
+      setSelectedTaskIds((prev) => toggleTaskId(prev, task.id))
+      return
+    }
+    setEditingTask(task)
+  }
+
+  const handleMoveTasks = useCallback(
+    (moved: Task[]) => {
+      if (moved.length === 0) return
+      upsertTasks(moved)
+      if (moved.length === 1) {
+        const task = moved[0]
+        const prev = tasks.find((t) => t.id === task.id)
+        const wasBacklog = prev ? isTaskUnscheduled(prev) : false
+        const nowBacklog = isTaskUnscheduled(task)
+        if (wasBacklog && !nowBacklog) {
+          showToast(`Scheduled “${task.title}” from backlog`)
+        } else if (!wasBacklog && nowBacklog) {
+          showToast(`Moved “${task.title}” to backlog`)
+        } else {
+          showToast(`Moved “${task.title}”`)
+        }
+        return
       }
+      const allBacklog = moved.every((t) => isTaskUnscheduled(t))
+      showToast(
+        allBacklog
+          ? `Moved ${moved.length} tasks to backlog`
+          : `Moved ${moved.length} tasks`,
+      )
     },
-    [upsertTask, tasks],
+    [upsertTasks, tasks],
   )
+
+  function handleBulkMoveToDate(date: string) {
+    const scheduled = selectedTasks.filter((t) => !isTaskUnscheduled(t))
+    if (scheduled.length === 0) {
+      showToast('Select scheduled tasks to move by date')
+      return
+    }
+    const moved = moveTasksToDate(scheduled, date)
+    upsertTasks(moved)
+    showToast(
+      `Moved ${moved.length} task${moved.length === 1 ? '' : 's'} to ${date}`,
+    )
+  }
+
+  function handleBulkAddLabel(label: string) {
+    if (selectedTasks.length === 0) return
+    const next = applyBulkLabels(selectedTasks, { add: label })
+    upsertTasks(next)
+    registerLabels([{ name: label, description: '' }])
+    showToast(`Added “${label}” to ${next.length} task${next.length === 1 ? '' : 's'}`)
+  }
+
+  function handleBulkRemoveLabel(label: string) {
+    if (selectedTasks.length === 0) return
+    const next = applyBulkLabels(selectedTasks, { remove: label })
+    upsertTasks(next)
+    showToast(
+      `Removed “${label}” from ${next.length} task${next.length === 1 ? '' : 's'}`,
+    )
+  }
 
   function handleCreateUnscheduled() {
     setEditingTask({
@@ -560,9 +650,9 @@ export default function App({ onLock }: AppProps) {
         <p className="hint">
           {mainView === 'board' ? (
             <>
-              Drag across empty 15‑minute cells to set a task’s start/end, or click
-              one cell for a 1‑hour default. Select a <strong>flow</strong>, then
-              drag → to link tasks.
+              Drag across empty cells to set start/end (one cell = 15 min). Use ✓
+              or ⌘/Ctrl‑click to multi‑select tasks, then move by date or labels.
+              Select a <strong>flow</strong>, then drag → to link.
             </>
           ) : (
             <>
@@ -585,6 +675,17 @@ export default function App({ onLock }: AppProps) {
         }}
       />
 
+      {selectedTaskIds.length > 0 && (
+        <BulkActionBar
+          count={selectedTaskIds.length}
+          knownLabels={allLabels.map((l) => l.name)}
+          onMoveToDate={handleBulkMoveToDate}
+          onAddLabel={handleBulkAddLabel}
+          onRemoveLabel={handleBulkRemoveLabel}
+          onClear={() => setSelectedTaskIds([])}
+        />
+      )}
+
       {mainView === 'board' ? (
         <CalendarGrid
           days={days}
@@ -597,8 +698,9 @@ export default function App({ onLock }: AppProps) {
           onCreateTask={handleCreateTask}
           onCreateUnscheduled={handleCreateUnscheduled}
           onToggleBacklog={toggleBacklogHidden}
-          onTaskClick={(task) => setEditingTask(task)}
-          onMoveTask={handleMoveTask}
+          selectedTaskIds={selectedTaskIds}
+          onTaskClick={handleTaskActivate}
+          onMoveTasks={handleMoveTasks}
           onLinkTasks={handleLinkTasks}
           onRemoveDependency={(id) => {
             removeDependency(id)
@@ -612,7 +714,8 @@ export default function App({ onLock }: AppProps) {
               tasks={scheduledTasks}
               dependencies={visibleDependencies}
               activeFlowId={activeFlowId}
-              onTaskClick={(task) => setEditingTask(task)}
+              selectedTaskIds={selectedTaskIds}
+              onTaskClick={handleTaskActivate}
               onRemoveDependency={(id) => {
                 removeDependency(id)
                 showToast('Dependency removed')
@@ -623,7 +726,8 @@ export default function App({ onLock }: AppProps) {
               hidden={backlogHidden}
               onToggleHidden={toggleBacklogHidden}
               onCreate={handleCreateUnscheduled}
-              onTaskClick={(task) => setEditingTask(task)}
+              selectedTaskIds={selectedTaskIds}
+              onTaskClick={handleTaskActivate}
             />
           </div>
         </DndContext>

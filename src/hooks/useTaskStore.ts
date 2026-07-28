@@ -438,6 +438,24 @@ export function useTaskStore() {
     })
   }, [])
 
+  const upsertTasks = useCallback((nextTasks: Task[]) => {
+    if (nextTasks.length === 0) return
+    setState((prev) => {
+      let tasks = prev.tasks
+      for (const task of nextTasks) {
+        const exists = tasks.some((t) => t.id === task.id)
+        tasks = exists
+          ? tasks.map((t) => (t.id === task.id ? task : t))
+          : [...tasks, task]
+      }
+      return {
+        ...prev,
+        tasks,
+        labels: mergeLabelCatalog(prev.labels, tasks),
+      }
+    })
+  }, [])
+
   const deleteTask = useCallback((taskId: string) => {
     setState((prev) => ({
       ...prev,
@@ -563,6 +581,7 @@ export function useTaskStore() {
     upsertFlow,
     deleteFlow,
     upsertTask,
+    upsertTasks,
     deleteTask,
     registerLabels,
     deleteLabel,

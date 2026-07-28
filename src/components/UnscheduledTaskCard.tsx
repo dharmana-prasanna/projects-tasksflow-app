@@ -1,17 +1,26 @@
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useRef } from 'react'
-import type { ColoredTask, Task } from '../types'
+import { shouldToggleTaskSelection } from '../domain/bulkTasks'
+import type { ColoredTask, Task, TaskActivateOptions } from '../types'
 
 type Props = {
   task: ColoredTask
   /** Disambiguates drag ids when a task appears under multiple label groups. */
   groupKey?: string
-  onTaskClick: (task: Task) => void
+  selected?: boolean
+  selectionActive?: boolean
+  onTaskClick: (task: Task, options?: TaskActivateOptions) => void
 }
 
 /** Draggable backlog card — drop onto a calendar slot to schedule. */
-export function UnscheduledTaskCard({ task, groupKey, onTaskClick }: Props) {
+export function UnscheduledTaskCard({
+  task,
+  groupKey,
+  selected = false,
+  selectionActive = false,
+  onTaskClick,
+}: Props) {
   const dragged = useRef(false)
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -24,12 +33,12 @@ export function UnscheduledTaskCard({ task, groupKey, onTaskClick }: Props) {
   }, [isDragging])
 
   return (
-    <button
+    <div
       ref={setNodeRef}
-      type="button"
       data-task-id={task.id}
       className={[
         'unscheduled-card',
+        selected ? 'unscheduled-card--selected' : '',
         isDragging ? 'unscheduled-card--dragging' : '',
       ]
         .filter(Boolean)
@@ -39,18 +48,37 @@ export function UnscheduledTaskCard({ task, groupKey, onTaskClick }: Props) {
         transform: CSS.Translate.toString(transform),
         opacity: isDragging ? 0.35 : 1,
       }}
-      {...listeners}
-      {...attributes}
-      onClick={() => {
-        if (dragged.current) {
-          dragged.current = false
-          return
-        }
-        onTaskClick(task)
-      }}
     >
-      <span className="unscheduled-card__title">{task.title || '(untitled)'}</span>
-      <span className="unscheduled-card__hint">Drag to calendar</span>
-    </button>
+      <button
+        type="button"
+        className="unscheduled-card__select"
+        aria-label={selected ? `Deselect ${task.title}` : `Select ${task.title}`}
+        aria-pressed={selected}
+        title={selected ? 'Deselect' : 'Select'}
+        onClick={(e) => {
+          e.stopPropagation()
+          onTaskClick(task, { toggle: true })
+        }}
+      >
+        {selected ? '✓' : ''}
+      </button>
+      <button
+        type="button"
+        className="unscheduled-card__body"
+        {...listeners}
+        {...attributes}
+        onClick={(e) => {
+          if (dragged.current) {
+            dragged.current = false
+            return
+          }
+          const toggle = shouldToggleTaskSelection(e, selectionActive)
+          onTaskClick(task, { toggle })
+        }}
+      >
+        <span className="unscheduled-card__title">{task.title || '(untitled)'}</span>
+        <span className="unscheduled-card__hint">Drag to calendar</span>
+      </button>
+    </div>
   )
 }

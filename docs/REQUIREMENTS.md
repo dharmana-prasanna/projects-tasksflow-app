@@ -164,6 +164,17 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 ### REQ-UI-005 — Task move
 - Tasks can be dragged to a new date/time slot; whole multi-day block shifts accordingly.
 
+### REQ-UI-019 — Multi-select tasks (bulk move + labels)
+- Users can multi-select tasks on the board, backlog, and graph:
+  - ✓ select control on task cards, or
+  - ⌘/Ctrl/Shift‑click (once any are selected, plain click also toggles).
+- Escape or **Clear** clears the selection.
+- A bulk bar appears while selection is non-empty with:
+  - **Move to** date — shifts each *scheduled* selected task so its earliest segment lands on that date (times preserved; multi-day offsets preserved). Unscheduled selected tasks are skipped for date move.
+  - **Label** Add / Remove — applies to all selected tasks (catalog updated on add).
+- Dragging one selected task onto a calendar slot (or backlog) moves **all** selected scheduled tasks by the same day/slot deltas (relative multi-move). Drag overlay shows `+N` when moving more than one.
+- Plain click (no modifiers, empty selection) still opens the task editor.
+
 ### REQ-UI-006 — Linking
 - User must select a flow before linking.
 - Drag from task → handle onto another task creates a dependency on the active flow.
@@ -356,6 +367,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 | Chrome panel| REQ-UI-011, REQ-LOCAL-005                            | `src/chromePrefs.test.ts`                          |
 | Graph view  | REQ-UI-012, REQ-LOCAL-006, REQ-LOCAL-007             | `src/domain/graphLayout.test.ts`, `src/viewPrefs.test.ts`, `src/domain/arrowGeometry.test.ts`, `src/graphCurvePrefs.test.ts` |
 | Task modal  | REQ-UI-004, REQ-UI-013                               | `src/taskModal.layout.test.ts`, `src/domain/taskDependents.test.ts` |
+| Multi-select| REQ-UI-019                                           | `src/domain/bulkTasks.test.ts`                     |
 | Auth gate   | REQ-AUTH-001, REQ-AUTH-002                           | `src/auth/passwordGate.test.ts`                    |
 | Local cache | REQ-LOCAL-001, REQ-LOCAL-003                         | `src/storage/localCache.test.ts`                   |
 | Sync policy | REQ-SYNC-002, REQ-SYNC-005                           | `src/storage/syncPolicy.test.ts`                   |

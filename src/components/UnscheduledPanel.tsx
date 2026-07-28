@@ -4,7 +4,7 @@ import {
   BACKLOG_DROP_ID,
   groupUnscheduledByLabel,
 } from '../domain/unscheduled'
-import type { ColoredTask, Task } from '../types'
+import type { ColoredTask, Task, TaskActivateOptions } from '../types'
 import { UnscheduledTaskCard } from './UnscheduledTaskCard'
 
 type Props = {
@@ -12,7 +12,8 @@ type Props = {
   hidden: boolean
   onToggleHidden: () => void
   onCreate: () => void
-  onTaskClick: (task: Task) => void
+  selectedTaskIds?: string[]
+  onTaskClick: (task: Task, options?: TaskActivateOptions) => void
 }
 
 /** Right-rail backlog of tasks with no date/time yet. */
@@ -21,8 +22,11 @@ export function UnscheduledPanel({
   hidden,
   onToggleHidden,
   onCreate,
+  selectedTaskIds = [],
   onTaskClick,
 }: Props) {
+  const selectionActive = selectedTaskIds.length > 0
+  const selectedSet = useMemo(() => new Set(selectedTaskIds), [selectedTaskIds])
   const { setNodeRef, isOver } = useDroppable({
     id: BACKLOG_DROP_ID,
     data: { backlog: true },
@@ -132,6 +136,8 @@ export function UnscheduledPanel({
                     <UnscheduledTaskCard
                       task={task}
                       groupKey={group.key}
+                      selected={selectedSet.has(task.id)}
+                      selectionActive={selectionActive}
                       onTaskClick={onTaskClick}
                     />
                   </li>

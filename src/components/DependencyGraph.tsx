@@ -12,8 +12,9 @@ import {
   saveGraphCurve,
   type GraphBendMap,
 } from '../graphCurvePrefs'
+import { shouldToggleTaskSelection } from '../domain/bulkTasks'
 import { formatSlot, primarySegment } from '../time'
-import type { ColoredTask } from '../types'
+import type { ColoredTask, TaskActivateOptions } from '../types'
 import type { ColoredDependency } from './DependencyArrows'
 
 const MUTED = '#9aa7b2'
@@ -22,7 +23,8 @@ type Props = {
   tasks: ColoredTask[]
   dependencies: ColoredDependency[]
   activeFlowId?: string | null
-  onTaskClick: (task: ColoredTask) => void
+  selectedTaskIds?: string[]
+  onTaskClick: (task: ColoredTask, options?: TaskActivateOptions) => void
   onRemoveDependency: (dependencyId: string) => void
 }
 
@@ -35,6 +37,7 @@ export function DependencyGraph({
   tasks,
   dependencies,
   activeFlowId = null,
+  selectedTaskIds = [],
   onTaskClick,
   onRemoveDependency,
 }: Props) {
@@ -42,6 +45,8 @@ export function DependencyGraph({
   const svgRef = useRef<SVGSVGElement>(null)
   const [curve, setCurve] = useState(loadGraphCurve)
   const [bends, setBends] = useState<GraphBendMap>(loadGraphBends)
+  const selectionActive = selectedTaskIds.length > 0
+  const selectedSet = useMemo(() => new Set(selectedTaskIds), [selectedTaskIds])
   const bendsRef = useRef(bends)
   bendsRef.current = bends
   const dragRef = useRef<{
@@ -295,11 +300,18 @@ export function DependencyGraph({
           {layout.nodes.map((node) => (
             <g
               key={node.id}
-              className="graph-node"
+              className={[
+                'graph-node',
+                selectedSet.has(node.id) ? 'graph-node--selected' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               transform={`translate(${node.x}, ${node.y})`}
-              onClick={() => {
+              onClick={(e) => {
                 const task = tasks.find((t) => t.id === node.id)
-                if (task) onTaskClick(task)
+                if (!task) return
+                const toggle = shouldToggleTaskSelection(e, selectionActive)
+                onTaskClick(task, { toggle })
               }}
             >
               <rect
