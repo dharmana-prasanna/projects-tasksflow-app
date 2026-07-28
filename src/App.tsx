@@ -1,4 +1,4 @@
-import { addDays, eachDayOfInterval, format, parseISO } from 'date-fns'
+import { addDays, eachDayOfInterval, format, startOfDay } from 'date-fns'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   isNarrowViewport,
@@ -78,7 +78,7 @@ export default function App({ onLock }: AppProps) {
 
   const [mainView, setMainView] = useState<MainView>(loadMainView)
   const [daySpan, setDaySpan] = useState<(typeof DAY_SPANS)[number]>(7)
-  const [cursor, setCursor] = useState(() => parseISO('2026-07-20'))
+  const [cursor, setCursor] = useState(() => startOfDay(new Date()))
   const [projectFilter, setProjectFilter] = useState<string | 'all'>('all')
   const [labelFilter, setLabelFilter] = useState<string[]>([])
   const [activeFlowId, setActiveFlowId] = useState<string | null>(null)
@@ -428,7 +428,7 @@ export default function App({ onLock }: AppProps) {
                   setProjectFilter('all')
                   setLabelFilter([])
                   setActiveFlowId(null)
-                  setCursor(parseISO('2026-07-20'))
+                  setCursor(startOfDay(new Date()))
                   showToast(
                     sheetsUrl
                       ? 'Sample board restored (will sync to Sheets)'

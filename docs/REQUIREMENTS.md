@@ -110,6 +110,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 
 ### REQ-UI-001 — Day span views
 - Supported spans: 1, 3, 7, 10, 15, 30, 60, 90, 180, 365 days.
+- Board date range **starts at today** by default (and after sample reset).
 - Cursor navigates backward/forward by the active span.
 
 ### REQ-UI-002 — Project filter
