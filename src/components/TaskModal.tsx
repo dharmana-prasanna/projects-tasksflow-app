@@ -49,6 +49,29 @@ export type TaskSavePayload = {
   labelMeta: LabelDef[]
 }
 
+export type TaskSaveOptions = {
+  /** When false, keep the modal open (nested edit). Default true. */
+  close?: boolean
+}
+
+/** Snapshot of the task editor form for nested navigation. */
+export type FormFrame = {
+  taskId: string | undefined
+  title: string
+  notes: string
+  projectId: string
+  startDate: string
+  endDate: string
+  segments: DaySegment[]
+  dependentIds: string[]
+  dependentQuery: string
+  dependentPriority: TaskPriority | 'all'
+  labels: string[]
+  labelDraft: string
+  priority: TaskPriority
+  unscheduled: boolean
+}
+
 type Props = {
   open: boolean
   initial: Partial<Task> | null
@@ -59,10 +82,40 @@ type Props = {
   flows: Flow[]
   activeFlowId: string | null
   onClose: () => void
-  onSave: (payload: TaskSavePayload) => void
-  onDelete?: (taskId: string) => void
+  onSave: (payload: TaskSavePayload, options?: TaskSaveOptions) => void
+  onDelete?: (taskId: string, options?: TaskSaveOptions) => void
   /** Click a label chip to list matching tasks on the board. */
   onShowLabel?: (label: string) => void
+}
+
+function loadScheduleFields(source: Partial<Task>): Pick<
+  FormFrame,
+  'unscheduled' | 'segments' | 'startDate' | 'endDate'
+> {
+  const explicitEmpty =
+    Array.isArray(source.segments) && source.segments.length === 0
+  if (explicitEmpty) {
+    return { unscheduled: true, segments: [], startDate: '', endDate: '' }
+  }
+  const segs =
+    source.segments && source.segments.length > 0
+      ? source.segments.map(normalizeSegment)
+      : [
+          {
+            date: format(new Date(), 'yyyy-MM-dd'),
+            startHour: 9,
+            startMinute: 0,
+            endHour: 9,
+            endMinute: 15,
+          },
+        ]
+  const sorted = [...segs].sort((a, b) => a.date.localeCompare(b.date))
+  return {
+    unscheduled: false,
+    segments: sorted,
+    startDate: sorted[0].date,
+    endDate: sorted[sorted.length - 1].date,
+  }
 }
 
 export function TaskModal({
@@ -95,65 +148,122 @@ export function TaskModal({
   const [labelDraft, setLabelDraft] = useState('')
   const [priority, setPriority] = useState<TaskPriority>(DEFAULT_TASK_PRIORITY)
   const [unscheduled, setUnscheduled] = useState(false)
+  /** Previous form frames when drilling into a related task. */
+  const [frameStack, setFrameStack] = useState<FormFrame[]>([])
+  /** Task id currently in the form (may differ from root `initial` when nested). */
+  const [editingTaskId, setEditingTaskId] = useState<string | undefined>()
 
   const activeFlow = activeFlowId
     ? flows.find((f) => f.id === activeFlowId)
     : undefined
 
   const knownLabels = useMemo(() => labelNames(labelCatalog), [labelCatalog])
+  const isNested = frameStack.length > 0
 
-  useEffect(() => {
-    if (!open || !initial) return
-    setTitle(initial.title ?? '')
-    setNotes(initial.notes ?? '')
-    setProjectId(initial.projectId ?? projects[0]?.id ?? '')
+  function captureFrame(): FormFrame {
+    return {
+      taskId: editingTaskId,
+      title,
+      notes,
+      projectId,
+      startDate,
+      endDate,
+      segments,
+      dependentIds,
+      dependentQuery,
+      dependentPriority,
+      labels,
+      labelDraft,
+      priority,
+      unscheduled,
+    }
+  }
+
+  function applyFrame(frame: FormFrame) {
+    setEditingTaskId(frame.taskId)
+    setTitle(frame.title)
+    setNotes(frame.notes)
+    setProjectId(frame.projectId)
+    setStartDate(frame.startDate)
+    setEndDate(frame.endDate)
+    setSegments(frame.segments)
+    setDependentIds(frame.dependentIds)
+    setDependentQuery(frame.dependentQuery)
+    setDependentPriority(frame.dependentPriority)
+    setLabels(frame.labels)
+    setLabelDraft(frame.labelDraft)
+    setPriority(frame.priority)
+    setUnscheduled(frame.unscheduled)
+  }
+
+  function loadFromTask(source: Partial<Task>) {
+    setEditingTaskId(source.id)
+    setTitle(source.title ?? '')
+    setNotes(source.notes ?? '')
+    setProjectId(source.projectId ?? projects[0]?.id ?? '')
     setDependentQuery('')
     setDependentPriority('all')
-    setLabels(normalizeLabels(initial.labels))
+    setLabels(normalizeLabels(source.labels))
     setLabelDraft('')
-    setPriority(normalizePriority(initial.priority))
-
-    const explicitEmpty =
-      Array.isArray(initial.segments) && initial.segments.length === 0
-    if (explicitEmpty) {
-      setUnscheduled(true)
-      setSegments([])
-      setStartDate('')
-      setEndDate('')
-    } else {
-      setUnscheduled(false)
-      const segs =
-        initial.segments && initial.segments.length > 0
-          ? initial.segments.map(normalizeSegment)
-          : [
-              {
-                date: format(new Date(), 'yyyy-MM-dd'),
-                startHour: 9,
-                startMinute: 0,
-                endHour: 9,
-                endMinute: 15,
-              },
-            ]
-      const sorted = [...segs].sort((a, b) => a.date.localeCompare(b.date))
-      setSegments(sorted)
-      setStartDate(sorted[0].date)
-      setEndDate(sorted[sorted.length - 1].date)
-    }
-
-    if (initial.id && activeFlowId) {
+    setPriority(normalizePriority(source.priority))
+    const schedule = loadScheduleFields(source)
+    setUnscheduled(schedule.unscheduled)
+    setSegments(schedule.segments)
+    setStartDate(schedule.startDate)
+    setEndDate(schedule.endDate)
+    if (source.id && activeFlowId) {
       setDependentIds(
-        currentDependentIds(dependencies, initial.id, activeFlowId).sort(),
+        currentDependentIds(dependencies, source.id, activeFlowId).sort(),
       )
     } else {
       setDependentIds([])
     }
-  }, [open, initial, projects, dependencies, activeFlowId])
+  }
+
+  function goBack(removeDependentId?: string) {
+    if (frameStack.length === 0) return
+    const frame = frameStack[frameStack.length - 1]
+    const restored =
+      removeDependentId != null
+        ? {
+            ...frame,
+            dependentIds: frame.dependentIds.filter(
+              (id) => id !== removeDependentId,
+            ),
+          }
+        : frame
+    setFrameStack((prev) => prev.slice(0, -1))
+    applyFrame(restored)
+  }
+
+  function openRelatedTask(taskId: string) {
+    const target = tasks.find((t) => t.id === taskId)
+    if (!target) return
+    setFrameStack((prev) => [...prev, captureFrame()])
+    loadFromTask(target)
+  }
+
+  function requestClose() {
+    if (isNested) {
+      goBack()
+      return
+    }
+    onClose()
+  }
+
+  useEffect(() => {
+    if (!open || !initial) return
+    setFrameStack([])
+    loadFromTask(initial)
+    // Root open / switch only — nested navigation is local.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [open, initial])
 
   const selected = projects.find((p) => p.id === projectId)
   const multiDay = segments.length > 1
   const candidates = useMemo(
-    () => eligibleDependentTasks(tasks, initial?.id),
-    [tasks, initial?.id],
+    () => eligibleDependentTasks(tasks, editingTaskId),
+    [tasks, editingTaskId],
   )
   const visibleCandidates = useMemo(
     () => filterDependentTasks(candidates, dependentQuery, dependentPriority),
@@ -168,7 +278,7 @@ export function TaskModal({
 
   if (!open || !initial) return null
 
-  const isEdit = Boolean(initial.id)
+  const isEdit = Boolean(editingTaskId)
 
   function applyRange(nextStart: string, nextEnd: string, nextSegs?: DaySegment[]) {
     const start = nextStart
@@ -231,7 +341,7 @@ export function TaskModal({
     if (!unscheduled && segments.length === 0) return
     const normalized = normalizeLabels(labels)
     const task: Task = {
-      id: initial!.id ?? crypto.randomUUID(),
+      id: editingTaskId ?? crypto.randomUUID(),
       title: title.trim(),
       notes: notes.trim(),
       projectId,
@@ -243,16 +353,29 @@ export function TaskModal({
       name,
       description: '',
     }))
-    onSave({
-      task,
-      dependentIds,
-      flowId: activeFlowId,
-      labelMeta,
-    })
+    const nested = frameStack.length > 0
+    onSave(
+      {
+        task,
+        dependentIds,
+        flowId: activeFlowId,
+        labelMeta,
+      },
+      { close: !nested },
+    )
+    if (nested) goBack()
+  }
+
+  function handleDelete() {
+    if (!editingTaskId || !onDelete) return
+    const nested = frameStack.length > 0
+    const deletedId = editingTaskId
+    onDelete(deletedId, { close: !nested })
+    if (nested) goBack(deletedId)
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="presentation">
+    <div className="modal-backdrop" onClick={requestClose} role="presentation">
       <div
         className="modal modal--wide"
         role="dialog"
@@ -261,13 +384,24 @@ export function TaskModal({
         onClick={(e) => e.stopPropagation()}
       >
         <header className="modal__header">
-          <h2 id={titleId}>{isEdit ? 'Edit task' : 'New task'}</h2>
+          <div className="modal__header-title">
+            {isNested && (
+              <button
+                type="button"
+                className="btn btn--ghost modal__back"
+                onClick={() => goBack()}
+              >
+                ← Back
+              </button>
+            )}
+            <h2 id={titleId}>{isEdit ? 'Edit task' : 'New task'}</h2>
+          </div>
           <div className="modal__header-actions">
-            {isEdit && onDelete && initial.id && (
+            {isEdit && onDelete && editingTaskId && (
               <button
                 type="button"
                 className="btn btn--danger btn--header-delete"
-                onClick={() => onDelete(initial.id!)}
+                onClick={handleDelete}
               >
                 Delete
               </button>
@@ -275,7 +409,7 @@ export function TaskModal({
             <button
               type="button"
               className="icon-btn"
-              onClick={onClose}
+              onClick={requestClose}
               aria-label="Close"
             >
               ×
@@ -590,7 +724,8 @@ export function TaskModal({
               <>
                 <p className="modal__tip">
                   On flow <strong>{activeFlow.name}</strong>, check tasks that
-                  depend on this one (creates arrows this → selected).
+                  depend on this one (creates arrows this → selected). Click a
+                  title to edit that task, then return here.
                 </p>
                 <div className="dependents__filters">
                   <label className="dependents__search">
@@ -662,27 +797,35 @@ export function TaskModal({
                       const project = projects.find((p) => p.id === t.projectId)
                       const prio = uiPriority(normalizePriority(t.priority))
                       return (
-                        <label key={t.id} className="dependents__item">
+                        <div key={t.id} className="dependents__item">
                           <input
                             type="checkbox"
                             checked={checked}
                             onChange={() =>
                               setDependentIds((prev) => toggleId(prev, t.id))
                             }
+                            aria-label={`Link ${t.title} as dependent`}
                           />
                           <span
                             className="project-dot"
                             style={{ background: project?.color ?? '#999' }}
                             aria-hidden
                           />
-                          <span className="dependents__title">{t.title}</span>
+                          <button
+                            type="button"
+                            className="dependents__title"
+                            onClick={() => openRelatedTask(t.id)}
+                            title={`Edit “${t.title}”`}
+                          >
+                            {t.title}
+                          </button>
                           <span
                             className={`dependents__priority-tag dependents__priority-tag--${prio}`}
                             title={PRIORITY_META[prio].hint}
                           >
                             {PRIORITY_META[prio].short}
                           </span>
-                        </label>
+                        </div>
                       )
                     })}
                   </div>
@@ -693,8 +836,12 @@ export function TaskModal({
 
           <div className="modal__actions">
             <div className="modal__actions-right">
-              <button type="button" className="btn btn--ghost" onClick={onClose}>
-                Cancel
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={requestClose}
+              >
+                {isNested ? 'Back' : 'Cancel'}
               </button>
               <button type="submit" className="btn btn--primary">
                 Save

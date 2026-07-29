@@ -133,7 +133,7 @@ describe('REQ-UI-013 — Pick dependents in task editor', () => {
     ])
   })
 
-  it('task modal wires dependents search and priority filter', () => {
+  it('task modal wires dependents search, priority filter, and nested edit', () => {
     const src = readFileSync(
       resolve(here, '../components/TaskModal.tsx'),
       'utf8',
@@ -143,6 +143,10 @@ describe('REQ-UI-013 — Pick dependents in task editor', () => {
     expect(src).toMatch(/dependentQuery/)
     expect(src).toMatch(/dependentPriority/)
     expect(src).toMatch(/dependents__priority/)
+    expect(src).toMatch(/openRelatedTask/)
+    expect(src).toMatch(/frameStack/)
+    expect(src).toMatch(/close:\s*!nested/)
+    expect(src).toMatch(/modal__back/)
   })
 
   it('dependents search is compact and titles wrap', () => {
@@ -153,5 +157,10 @@ describe('REQ-UI-013 — Pick dependents in task editor', () => {
     expect(css).not.toMatch(
       /\.dependents__title\s*\{[^}]*white-space:\s*nowrap/s,
     )
+  })
+
+  it('App keeps the modal open on nested save', () => {
+    const app = readFileSync(resolve(here, '../App.tsx'), 'utf8')
+    expect(app).toMatch(/options\?\.close\s*!==\s*false/)
   })
 })

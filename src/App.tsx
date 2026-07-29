@@ -788,7 +788,8 @@ export default function App({ onLock }: AppProps) {
         activeFlowId={activeFlowId}
         onClose={() => setEditingTask(null)}
         onShowLabel={showTasksForLabel}
-        onSave={({ task, dependentIds, flowId, labelMeta }) => {
+        onSave={(payload, options) => {
+          const { task, dependentIds, flowId, labelMeta } = payload
           upsertTask(task)
           registerLabels(labelMeta)
           let linkNote = ''
@@ -820,14 +821,21 @@ export default function App({ onLock }: AppProps) {
               linkNote = ` · ${parts.join(', ')}`
             }
           }
-          setEditingTask(null)
-          showToast(
-            `${editingTask?.id ? 'Task updated' : 'Task created'}${linkNote}`,
-          )
+          const shouldClose = options?.close !== false
+          if (shouldClose) {
+            setEditingTask(null)
+            showToast(
+              `${editingTask?.id ? 'Task updated' : 'Task created'}${linkNote}`,
+            )
+          } else {
+            showToast(`Task updated${linkNote}`)
+          }
         }}
-        onDelete={(id) => {
+        onDelete={(id, options) => {
           deleteTask(id)
-          setEditingTask(null)
+          if (options?.close !== false) {
+            setEditingTask(null)
+          }
           showToast('Task deleted')
         }}
       />

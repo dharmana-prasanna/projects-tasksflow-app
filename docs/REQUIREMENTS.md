@@ -164,8 +164,12 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - A **search field** filters that list by case-insensitive title substring (`filterDependentTasks`); empty query shows all eligible tasks.
 - Compact **priority chips** (All / DoNow / Schedule / Delegate) further filter the list; title and priority combine (AND). Priority filter resets with search when the modal opens / switches task.
 - The search control is **compact** (not full modal width); dependent task titles **wrap** to multiple lines (no single-line ellipsis truncation).
+- **Click a dependent title** to open that task for full edit in the same modal (nested navigation). Parent form draft is stacked and restored on return.
+- Nested **Save** persists the related task and returns to the previous editor (`onSave` with `{ close: false }`); list rows reflect updated titles/priority from the store.
+- Nested **Back** / Cancel / backdrop discard the nested draft and restore the previous frame without closing the root modal.
+- Nested **Delete** deletes that task, returns to the previous frame, and drops its id from the restored `dependentIds` if present.
 - Filtering only affects visibility — checked selections persist even when a task is temporarily hidden by the query.
-- Search and priority filter reset when the task modal opens / switches task.
+- Search and priority filter reset when the task modal opens / switches task (and when drilling into a related task).
 - Links are created on the **active flow**: selected tasks become `from(current) → to(selected)`.
 - On save, selection is synced: new checks add dependencies; unchecked existing links on that flow are removed.
 - Cycle / duplicate / self-link rules still apply (`validateNewDependency`); failures are skipped and reported in the toast.

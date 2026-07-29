@@ -2162,6 +2162,20 @@
   min-width: 0;
 }
 
+.modal__header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.modal__back {
+  flex-shrink: 0;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.8rem;
+}
+
 .modal__header-actions {
   display: flex;
   align-items: center;
@@ -2327,7 +2341,6 @@
   color: var(--ink) !important;
   padding: 0.35rem 0.4rem;
   border-radius: 0.45rem;
-  cursor: pointer;
 }
 
 .dependents__item:hover {
@@ -2347,12 +2360,32 @@
 }
 
 .dependents__title {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
   min-width: 0;
   flex: 1 1 auto;
+  text-align: left;
+  font: inherit;
+  font-weight: 550;
+  color: var(--ink);
+  cursor: pointer;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
   line-height: 1.35;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.15em;
+}
+
+.dependents__title:hover,
+.dependents__title:focus-visible {
+  color: #1d4e89;
+  text-decoration-color: currentColor;
+  outline: none;
 }
 
 .modal__row {
