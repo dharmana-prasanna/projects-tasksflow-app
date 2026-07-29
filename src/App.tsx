@@ -37,7 +37,7 @@ import {
 } from './domain/taskPriority'
 import {
   mergeLabelCatalog,
-  selectLabelFilter,
+  toggleLabelFilter,
   taskMatchesLabelFilter,
 } from './domain/taskLabels'
 import {
@@ -290,19 +290,26 @@ export default function App({ onLock }: AppProps) {
   }
 
   function showTasksForLabel(label: string) {
-    setLabelFilter(selectLabelFilter(label))
+    const next = toggleLabelFilter(labelFilter, label)
+    setLabelFilter(next)
     if (chromeMinimized) {
       setChromeMinimized(false)
       saveChromeMinimized(false)
     }
     setEditingTask(null)
+    if (next.length === 0) {
+      showToast('Showing all labels')
+      return
+    }
     const count = tasks.filter((t) =>
-      taskMatchesLabelFilter(t, selectLabelFilter(label)),
+      taskMatchesLabelFilter(t, next),
     ).length
+    const labelText =
+      next.length === 1 ? `“${next[0]}”` : `${next.length} labels`
     showToast(
       count === 0
-        ? `No tasks with “${label}” yet`
-        : `${count} task${count === 1 ? '' : 's'} with “${label}”`,
+        ? `No tasks match ${labelText}`
+        : `${count} task${count === 1 ? '' : 's'} match ${labelText}`,
     )
   }
 

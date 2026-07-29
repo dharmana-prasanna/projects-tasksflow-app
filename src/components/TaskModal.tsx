@@ -488,8 +488,8 @@ export function TaskModal({
               Labels
               <span
                 className="field-help"
-                title="Click a label to list matching tasks on the board. Use × to unlink from this task only — that does not delete the label."
-                aria-label="Click a label to list matching tasks on the board. Use × to unlink from this task only — that does not delete the label."
+                title="Click a label to toggle it in the board filter (multi-select). Use × to unlink from this task only — that does not delete the label."
+                aria-label="Click a label to toggle it in the board filter. Use × to unlink from this task only — that does not delete the label."
               >
                 ?
               </span>

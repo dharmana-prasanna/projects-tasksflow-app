@@ -35,8 +35,8 @@ export function LabelBar({
         <span className="label-bar__title">Labels</span>
         <span
           className="field-help"
-          title="Click a label to list its tasks. × deletes a label only when no tasks use it."
-          aria-label="Click a label to list its tasks. × deletes a label only when no tasks use it."
+          title="Click labels to multi-select (OR). Click again to deselect. × deletes a label only when no tasks use it."
+          aria-label="Click labels to multi-select. Click again to deselect. × deletes a label only when no tasks use it."
         >
           ?
         </span>
@@ -70,7 +70,9 @@ export function LabelBar({
                 title={
                   count === 0
                     ? `${label} (unused — safe to delete)`
-                    : `Show ${count} task${count === 1 ? '' : 's'} with “${label}”`
+                    : active
+                      ? `Remove “${label}” from filter (${count} task${count === 1 ? '' : 's'})`
+                      : `Add “${label}” to filter (${count} task${count === 1 ? '' : 's'})`
                 }
               >
                 {label}
