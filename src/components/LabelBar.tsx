@@ -10,7 +10,7 @@ type Props = {
   onDelete: (label: string) => void
 }
 
-/** Label chips to filter the board/graph (matching tasks show in LabelFilterBanner). */
+/** Label chips to filter the board/graph/backlog (OR across selected labels). */
 export function LabelBar({
   labels,
   tasks,

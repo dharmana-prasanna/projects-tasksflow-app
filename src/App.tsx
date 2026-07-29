@@ -12,7 +12,6 @@ import { BulkActionBar } from './components/BulkActionBar'
 import { CalendarGrid } from './components/CalendarGrid'
 import { ChromePanel } from './components/ChromePanel'
 import { LabelBar } from './components/LabelBar'
-import { LabelFilterBanner } from './components/LabelFilterBanner'
 import { PriorityBar } from './components/PriorityBar'
 import type { ColoredDependency } from './components/DependencyArrows'
 import { DependencyGraph } from './components/DependencyGraph'
@@ -296,20 +295,27 @@ export default function App({ onLock }: AppProps) {
       setChromeMinimized(false)
       saveChromeMinimized(false)
     }
+    // Label matches show in Backlog / board — ensure backlog rail is visible.
+    if (next.length > 0 && backlogHidden) {
+      setBacklogHidden(false)
+      saveBacklogHidden(false)
+    }
     setEditingTask(null)
     if (next.length === 0) {
       showToast('Showing all labels')
       return
     }
-    const count = tasks.filter((t) =>
-      taskMatchesLabelFilter(t, next),
-    ).length
+    const matching = tasks.filter((t) => taskMatchesLabelFilter(t, next))
+    const backlogCount = matching.filter((t) => isTaskUnscheduled(t)).length
     const labelText =
       next.length === 1 ? `“${next[0]}”` : `${next.length} labels`
     showToast(
-      count === 0
+      matching.length === 0
         ? `No tasks match ${labelText}`
-        : `${count} task${count === 1 ? '' : 's'} match ${labelText}`,
+        : `${matching.length} task${matching.length === 1 ? '' : 's'} match ${labelText}` +
+            (backlogCount > 0
+              ? ` · ${backlogCount} in backlog`
+              : ''),
     )
   }
 
@@ -714,16 +720,6 @@ export default function App({ onLock }: AppProps) {
           )}
         </p>
       </ChromePanel>
-
-      <LabelFilterBanner
-        selected={labelFilter}
-        tasks={tasks}
-        onClear={() => setLabelFilter([])}
-        onOpenTask={(taskId) => {
-          const task = tasks.find((t) => t.id === taskId)
-          if (task) setEditingTask(task)
-        }}
-      />
 
       {selectedTaskIds.length > 0 && (
         <BulkActionBar
