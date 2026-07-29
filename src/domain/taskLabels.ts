@@ -190,7 +190,7 @@ export function removeFromLabelCatalog(
 
 /**
  * Filter: empty `selected` → all tasks pass.
- * Otherwise task must include **any** selected label (OR, case-insensitive).
+ * Otherwise task must include **every** selected label (AND, case-insensitive).
  */
 export function taskMatchesLabelFilter(
   task: { labels?: string[] },
@@ -202,7 +202,7 @@ export function taskMatchesLabelFilter(
       .map((l) => normalizeLabel(l)?.toLowerCase())
       .filter((x): x is string => Boolean(x)),
   )
-  return selected.some((s) => {
+  return selected.every((s) => {
     const key = normalizeLabel(s)?.toLowerCase()
     return Boolean(key && have.has(key))
   })

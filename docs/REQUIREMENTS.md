@@ -152,7 +152,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 
 ### REQ-UI-017 — Filter by labels
 - Chrome shows a **LabelBar** of catalog labels plus **All labels**.
-- **Clicking a label** (bar or task editor chip) **toggles** it in a multi-select filter (`toggleLabelFilter`); multiple selected labels match with **OR** (`taskMatchesLabelFilter`). Clicking again deselects that label. Filters the board, graph, and **Backlog** via the same `visibleTasks` pipeline (no separate matching-task list). Expands chrome / reveals backlog when needed so matches are visible. Clicking a label must not delete/unlink it.
+- **Clicking a label** (bar or task editor chip) **toggles** it in a multi-select filter (`toggleLabelFilter`); multiple selected labels match with **AND** (`taskMatchesLabelFilter` — task must have every selected label). Clicking again deselects that label. Filters the board, graph, and **Backlog** via the same `visibleTasks` pipeline (no separate matching-task list). Expands chrome / reveals backlog when needed so matches are visible. Clicking a label must not delete/unlink it.
 - Each chip shows a usage count; **×** deletes from the catalog only when unused. If tasks still use it, delete is refused, the filter toggles that label (so matching backlog/board tasks appear), and a toast explains why.
 - In the task editor, the Labels help copy is a **tooltip** on a compact `?` control (not a paragraph), to save space. Label name click toggles that label in the board filter; **×** only unlinks from **that task**.
 - **All labels** / **Clear labels** clears the filter (show all, still subject to project filter).

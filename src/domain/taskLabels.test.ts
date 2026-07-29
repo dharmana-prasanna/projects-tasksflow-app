@@ -49,12 +49,13 @@ describe('REQ-MODEL-005 / REQ-UI-017 — Task labels', () => {
     ).toEqual(['food', 'Kids', 'Trip'])
   })
 
-  it('taskMatchesLabelFilter uses OR semantics; empty filter matches all', () => {
+  it('taskMatchesLabelFilter uses AND semantics; empty filter matches all', () => {
     const task = { labels: ['Trip', 'food'] }
     expect(taskMatchesLabelFilter(task, [])).toBe(true)
     expect(taskMatchesLabelFilter(task, ['kids'])).toBe(false)
     expect(taskMatchesLabelFilter(task, ['food'])).toBe(true)
-    expect(taskMatchesLabelFilter(task, ['kids', 'TRIP'])).toBe(true)
+    expect(taskMatchesLabelFilter(task, ['TRIP', 'food'])).toBe(true)
+    expect(taskMatchesLabelFilter(task, ['kids', 'TRIP'])).toBe(false)
   })
 
   it('toggleLabelFilter adds and removes', () => {

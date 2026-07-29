@@ -10,7 +10,7 @@ type Props = {
   onDelete: (label: string) => void
 }
 
-/** Label chips to filter the board/graph/backlog (OR across selected labels). */
+/** Label chips to filter the board/graph/backlog (AND across selected labels). */
 export function LabelBar({
   labels,
   tasks,
@@ -35,8 +35,8 @@ export function LabelBar({
         <span className="label-bar__title">Labels</span>
         <span
           className="field-help"
-          title="Click labels to multi-select (OR). Click again to deselect. × deletes a label only when no tasks use it."
-          aria-label="Click labels to multi-select. Click again to deselect. × deletes a label only when no tasks use it."
+          title="Click labels to multi-select (AND — task must have all). Click again to deselect. × deletes a label only when no tasks use it."
+          aria-label="Click labels to multi-select with AND. Click again to deselect. × deletes a label only when no tasks use it."
         >
           ?
         </span>
