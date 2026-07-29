@@ -6,6 +6,8 @@ export const STORAGE_KEY = 'flowboard-state-v6'
 export const UPDATED_AT_KEY = 'flowboard-updated-at'
 export const SHEETS_URL_KEY = 'flowboard-sheets-url'
 export const CALENDAR_SYNC_KEY = 'flowboard-calendar-sync'
+/** Extra Apps Script /exec URLs for other Gmail accounts’ Google Tasks import. */
+export const GOOGLE_TASKS_IMPORT_URLS_KEY = 'flowboard-google-tasks-import-urls'
 
 export function loadLocalState(): StoreState {
   try {
@@ -70,6 +72,29 @@ export function getCalendarSync(): boolean {
 
 export function setCalendarSync(enabled: boolean) {
   localStorage.setItem(CALENDAR_SYNC_KEY, enabled ? 'true' : 'false')
+}
+
+/** Parse newline- or comma-separated extra Google Tasks import web app URLs. */
+export function parseGoogleTasksImportUrls(raw: string): string[] {
+  return String(raw ?? '')
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
+export function loadGoogleTasksImportUrls(): string[] {
+  try {
+    return parseGoogleTasksImportUrls(
+      localStorage.getItem(GOOGLE_TASKS_IMPORT_URLS_KEY) ?? '',
+    )
+  } catch {
+    return []
+  }
+}
+
+export function saveGoogleTasksImportUrls(urls: string[]) {
+  const cleaned = urls.map((u) => u.trim()).filter(Boolean)
+  localStorage.setItem(GOOGLE_TASKS_IMPORT_URLS_KEY, cleaned.join('\n'))
 }
 
 export function clearLocalCache() {

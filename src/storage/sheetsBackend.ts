@@ -134,3 +134,29 @@ export async function deleteInvalidTasksFromSheets(scriptUrl: string): Promise<{
     (deleted ? `Deleted ${deleted} invalid task(s).` : 'No invalid tasks found.')
   return { deleted, titles, message }
 }
+
+export type GoogleTasksImportResult = {
+  imported: number
+  skipped: number
+  accountEmail: string
+  message: string
+}
+
+/** Import incomplete Google Tasks for the script runner into Flowboard backlog. */
+export async function importGoogleTasksFromSheets(
+  scriptUrl: string,
+): Promise<GoogleTasksImportResult> {
+  const data = await request(scriptUrl, { action: 'importGoogleTasks' })
+  if (!data.ok) throw new Error(data.error || 'Google Tasks import failed')
+  const imported = Number((data as { imported?: number }).imported ?? 0)
+  const skipped = Number((data as { skipped?: number }).skipped ?? 0)
+  const accountEmail = String(
+    (data as { accountEmail?: string }).accountEmail ?? '',
+  )
+  const message =
+    (data as { message?: string }).message ||
+    (imported
+      ? `Imported ${imported} Google Task(s).`
+      : 'No new Google Tasks to import.')
+  return { imported, skipped, accountEmail, message }
+}

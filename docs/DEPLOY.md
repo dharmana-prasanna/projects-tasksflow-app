@@ -113,11 +113,13 @@ npm run preview
 
 Opens the production bundle (default `http://localhost:4173`).
 
-## 3. Apps Script (Sheets / Calendar) after hosting
+## 3. Apps Script (Sheets / Calendar / Google Tasks) after hosting
 
 1. Deploy `google-apps-script/Code.gs` as a Web App (Execute as: Me, Who has access: Anyone).
 2. Copy the `/exec` URL into Flowboard → **Sheets**, or set `VITE_SHEETS_SCRIPT_URL` and rebuild.
 3. If the site is on HTTPS (required for most hosts), the script URL must also be HTTPS.
+4. **Google Tasks → backlog:** In the Apps Script editor, Services (+) → enable **Google Tasks API**, run `authorizeGoogleTasks`, optionally `installGoogleTasksTrigger`. In Flowboard use **Import Google Tasks** (or wait for the trigger) then Pull.
+5. **Multiple Gmails:** Share the spreadsheet Editor with each account. For each other Gmail, create a separate Apps Script project with the same `Code.gs`, set script property `SPREADSHEET_ID` to the shared sheet id, enable Tasks, authorize, and install the trigger. Optionally deploy those as web apps and paste their `/exec` URLs under **Extra Google Tasks import URLs**.
 
 Local browser storage still works without Sheets; sync is optional.
 

@@ -87,6 +87,7 @@ export default function App({ onLock }: AppProps) {
     pullFromSheets,
     pushToSheets,
     deleteInvalidTasks,
+    importGoogleTasks,
   } = useTaskStore()
 
   const [mainView, setMainView] = useState<MainView>(loadMainView)
@@ -849,6 +850,7 @@ export default function App({ onLock }: AppProps) {
           onPull={pullFromSheets}
           onPush={pushToSheets}
           onDeleteInvalidTasks={deleteInvalidTasks}
+          onImportGoogleTasks={importGoogleTasks}
         />
       )}
 

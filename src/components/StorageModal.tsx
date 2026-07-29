@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { SyncStatus } from '../hooks/useTaskStore'
-import { getBuiltInSheetsUrl } from '../storage/localCache'
+import {
+  getBuiltInSheetsUrl,
+  loadGoogleTasksImportUrls,
+  parseGoogleTasksImportUrls,
+  saveGoogleTasksImportUrls,
+} from '../storage/localCache'
 
 type Props = {
   sheetsUrl: string
@@ -24,6 +29,9 @@ type Props = {
     allowEmptyBoard?: boolean
   }) => Promise<{ ok: true; detail?: string } | { ok: false; reason: string }>
   onDeleteInvalidTasks: () => Promise<
+    { ok: true; detail?: string } | { ok: false; reason: string }
+  >
+  onImportGoogleTasks: () => Promise<
     { ok: true; detail?: string } | { ok: false; reason: string }
   >
 }
@@ -50,9 +58,13 @@ export function StorageModal({
   onPull,
   onPush,
   onDeleteInvalidTasks,
+  onImportGoogleTasks,
   taskCount,
 }: Props) {
   const [url, setUrl] = useState(sheetsUrl)
+  const [extraImportUrls, setExtraImportUrls] = useState(() =>
+    loadGoogleTasksImportUrls().join('\n'),
+  )
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const builtInUrl = getBuiltInSheetsUrl()
@@ -60,6 +72,10 @@ export function StorageModal({
   useEffect(() => {
     setUrl(sheetsUrl || builtInUrl)
   }, [sheetsUrl, builtInUrl])
+
+  useEffect(() => {
+    setExtraImportUrls(loadGoogleTasksImportUrls().join('\n'))
+  }, [sheetsUrl])
 
   async function connect() {
     setBusy(true)
@@ -118,6 +134,19 @@ export function StorageModal({
     const result = await onDeleteInvalidTasks()
     setBusy(false)
     setMessage(result.ok ? (result.detail ?? 'Cleanup done.') : result.reason)
+  }
+
+  function persistExtraImportUrls() {
+    saveGoogleTasksImportUrls(parseGoogleTasksImportUrls(extraImportUrls))
+  }
+
+  async function importGoogleTasks() {
+    persistExtraImportUrls()
+    setBusy(true)
+    setMessage(null)
+    const result = await onImportGoogleTasks()
+    setBusy(false)
+    setMessage(result.ok ? (result.detail ?? 'Import done.') : result.reason)
   }
 
   return (
@@ -197,6 +226,24 @@ export function StorageModal({
             </span>
           </label>
 
+          <label>
+            Extra Google Tasks import URLs
+            <textarea
+              value={extraImportUrls}
+              onChange={(e) => setExtraImportUrls(e.target.value)}
+              onBlur={persistExtraImportUrls}
+              placeholder="One /exec URL per line (other Gmail Apps Script deployments)"
+              rows={3}
+              spellCheck={false}
+              autoComplete="off"
+            />
+          </label>
+          <p className="modal__tip">
+            Each Gmail needs its own Apps Script (Tasks service + authorize). Primary URL
+            above imports that account; extras cover your other accounts. Or rely on each
+            script’s 10‑minute trigger and just Pull.
+          </p>
+
           <div className="modal__actions">
             <button type="button" className="btn btn--primary" disabled={busy} onClick={connect}>
               {url.trim() ? 'Connect' : 'Use local only'}
@@ -208,6 +255,15 @@ export function StorageModal({
                 </button>
                 <button type="button" className="btn btn--ghost" disabled={busy} onClick={push}>
                   Push
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={busy}
+                  onClick={() => void importGoogleTasks()}
+                  title="Import incomplete Google Tasks into the backlog"
+                >
+                  Import Google Tasks
                 </button>
                 <button
                   type="button"
@@ -266,10 +322,23 @@ export function StorageModal({
             click <strong>Push</strong> and confirm clearing Sheets (or <strong>Pull</strong> to
             restore). After updating <code>Code.gs</code>, redeploy a <strong>New version</strong>.
           </li>
+          <li>
+            <strong>Google Tasks → backlog:</strong> In Apps Script enable Services →{' '}
+            <strong>Google Tasks API</strong>, run <code>authorizeGoogleTasks</code>, optional{' '}
+            <code>installGoogleTasksTrigger</code>. Then use <strong>Import Google Tasks</strong>{' '}
+            (or wait for the trigger) and Pull.
+          </li>
+          <li>
+            <strong>Multiple Gmails:</strong> Share the spreadsheet Editor with each account.
+            Under each other Gmail, create a new Apps Script project with the same{' '}
+            <code>Code.gs</code>, set script property <code>SPREADSHEET_ID</code> to the shared
+            sheet id, enable Tasks, authorize, and install the trigger. Optionally deploy those
+            projects as web apps and paste their <code>/exec</code> URLs in Extra import URLs.
+          </li>
         </ol>
         <p className="storage-note">
-          Sheets tabs: Projects, Flows, Tasks, Segments, Dependencies, CalendarMap, Meta.
-          Browser keeps a local cache for fast loads.
+          Sheets tabs: Projects, Flows, Tasks, Segments, Dependencies, CalendarMap,
+          GoogleTasksMap, Meta. Browser keeps a local cache for fast loads.
         </p>
       </div>
     </div>

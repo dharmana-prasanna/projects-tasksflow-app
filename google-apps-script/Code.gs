@@ -1,22 +1,31 @@
 /**
- * Flowboard → Google Sheets + Google Calendar backend
+ * Flowboard → Google Sheets + Google Calendar + Google Tasks (import) backend
  *
- * Setup:
+ * Setup (primary account — owns the sheet):
  * 1. Create a Google Sheet (or open an existing one).
  * 2. Extensions → Apps Script → paste this file.
  * 3. Deploy → New deployment → Type: Web app
  *    - Execute as: Me
  *    - Who has access: Anyone
  * 4. Copy the Web app URL into Flowboard → Sheets sync.
- * 5. Enable "Google Calendar" in Flowboard. On first sync, Google may ask
- *    you to authorize Calendar access for this script (run once from the
- *    Apps Script editor if the web app doesn't prompt).
+ * 5. Services (+): enable Google Tasks API (Tasks advanced service).
+ * 6. Run authorizeGoogleTasks (and authorizeCalendar if using Calendar) once.
+ * 7. Optional: run installGoogleTasksTrigger for auto-import every 10 minutes.
+ *
+ * Multi-account Google Tasks (e.g. 3 Gmails):
+ * - Share the spreadsheet Editor with each Gmail.
+ * - Under each other account: script.google.com → New project → paste this file.
+ * - Project Settings → Script properties → SPREADSHEET_ID = the shared sheet id.
+ * - Enable Tasks advanced service; run authorizeGoogleTasks; installGoogleTasksTrigger.
+ * - Optional: deploy that project as a Web app and paste its /exec URL into
+ *   Flowboard → "Extra Google Tasks import URLs" for one-click Import.
  *
  * Sheets created automatically:
- *   Projects | Flows | Tasks | Segments | Dependencies | CalendarMap | Meta
+ *   Projects | Flows | Tasks | Segments | Dependencies | CalendarMap |
+ *   GoogleTasksMap | Meta
  *
  * Calendar: one event per day-segment (start→end that day).
- * Multi-day tasks can have different times each day.
+ * Google Tasks: incomplete tasks → Flowboard backlog (segments empty).
  */
 
 var SHEET_PROJECTS = 'Projects'
@@ -25,6 +34,7 @@ var SHEET_TASKS = 'Tasks'
 var SHEET_SEGS = 'Segments'
 var SHEET_DEPS = 'Dependencies'
 var SHEET_CAL = 'CalendarMap'
+var SHEET_GTMAP = 'GoogleTasksMap'
 var SHEET_META = 'Meta'
 
 function doGet(e) {
@@ -109,8 +119,15 @@ function handle_(req) {
     if (action === 'deleteInvalidTasks') {
       return json_(deleteInvalidTasks_())
     }
+    if (action === 'importGoogleTasks') {
+      return json_(importGoogleTasks_())
+    }
     if (action === 'ping') {
-      return json_({ ok: true, version: 3, features: ['sheets', 'calendar', 'cleanup'] })
+      return json_({
+        ok: true,
+        version: 4,
+        features: ['sheets', 'calendar', 'cleanup', 'googleTasks'],
+      })
     }
     return json_({ ok: false, error: 'Unknown action: ' + action })
   } catch (err) {
@@ -124,8 +141,19 @@ function json_(obj) {
   )
 }
 
+/**
+ * Active/bound spreadsheet, or open by Script property SPREADSHEET_ID
+ * (used by secondary Gmail scripts writing into a shared sheet).
+ */
 function ss_() {
-  return SpreadsheetApp.getActiveSpreadsheet()
+  var props = PropertiesService.getScriptProperties()
+  var id = String(props.getProperty('SPREADSHEET_ID') || '').trim()
+  if (id) return SpreadsheetApp.openById(id)
+  var active = SpreadsheetApp.getActiveSpreadsheet()
+  if (active) return active
+  throw new Error(
+    'No spreadsheet. Bind this script to a Sheet, or set script property SPREADSHEET_ID.',
+  )
 }
 
 function ensureSheet_(name, headers) {
@@ -210,6 +238,12 @@ function ensureAll_() {
   ])
   ensureSheet_(SHEET_DEPS, ['id', 'fromId', 'toId', 'flowId'])
   ensureSheet_(SHEET_CAL, ['mapKey', 'taskId', 'date', 'eventId'])
+  ensureSheet_(SHEET_GTMAP, [
+    'accountEmail',
+    'googleTaskId',
+    'flowboardTaskId',
+    'importedAt',
+  ])
   ensureSheet_(SHEET_META, ['key', 'value'])
 }
 
@@ -967,6 +1001,295 @@ function deleteInvalidTasks_() {
     deleted: removed.length,
     titles: removed.map(function (r) { return r.title }),
     message: 'Deleted ' + removed.length + ' task(s) with no valid date.',
+  }
+}
+
+/** Run once from the Apps Script editor to grant Google Tasks permission. */
+function authorizeGoogleTasks() {
+  if (typeof Tasks === 'undefined') {
+    throw new Error(
+      'Enable Tasks advanced service: Editor → Services (+) → Google Tasks API.',
+    )
+  }
+  var lists = Tasks.Tasklists.list({ maxResults: 1 })
+  var n = (lists.items && lists.items.length) || 0
+  var email = Session.getEffectiveUser().getEmail()
+  Logger.log('Google Tasks authorized for ' + email + ' (' + n + ' list sample)')
+  return { ok: true, email: email }
+}
+
+/** Install a 10-minute trigger that imports new Google Tasks into the backlog. */
+function installGoogleTasksTrigger() {
+  authorizeGoogleTasks()
+  var triggers = ScriptApp.getProjectTriggers()
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'importGoogleTasksNow') {
+      ScriptApp.deleteTrigger(triggers[i])
+    }
+  }
+  ScriptApp.newTrigger('importGoogleTasksNow')
+    .timeBased()
+    .everyMinutes(10)
+    .create()
+  Logger.log('Installed importGoogleTasksNow every 10 minutes')
+  return { ok: true }
+}
+
+/** Editor / trigger entry point. */
+function importGoogleTasksNow() {
+  var result = importGoogleTasks_()
+  Logger.log(JSON.stringify(result))
+  return result
+}
+
+function accountEmail_() {
+  try {
+    var email = Session.getEffectiveUser().getEmail()
+    if (email) return String(email).toLowerCase()
+  } catch (err) {
+    /* fall through */
+  }
+  return 'unknown'
+}
+
+function accountTag_(email) {
+  var local = String(email || 'unknown').split('@')[0]
+  var tag = local.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 24)
+  return tag || 'account'
+}
+
+function googleTasksMapKey_(accountEmail, googleTaskId) {
+  return String(accountEmail) + '|' + String(googleTaskId)
+}
+
+function readGoogleTasksMap_() {
+  ensureAll_()
+  var rows = readObjects_(ss_().getSheetByName(SHEET_GTMAP))
+  var map = {}
+  for (var i = 0; i < rows.length; i++) {
+    var email = String(rows[i].accountEmail || '').toLowerCase()
+    var gid = String(rows[i].googleTaskId || '')
+    var fid = String(rows[i].flowboardTaskId || '')
+    if (!email || !gid || !fid) continue
+    map[googleTasksMapKey_(email, gid)] = fid
+  }
+  return map
+}
+
+function ensureDefaultProject_() {
+  var sheet = ss_().getSheetByName(SHEET_PROJECTS)
+  var projects = readObjects_(sheet)
+  if (projects.length) {
+    return {
+      id: String(projects[0].id),
+      name: String(projects[0].name || 'Inbox'),
+      color: String(projects[0].color || '#1d4e89'),
+    }
+  }
+  var project = {
+    id: Utilities.getUuid(),
+    name: 'Inbox',
+    color: '#1d4e89',
+  }
+  sheet.appendRow([project.id, project.name, project.color])
+  return project
+}
+
+function appendTaskBacklogRow_(task) {
+  var sheet = ss_().getSheetByName(SHEET_TASKS)
+  var headers = sheetHeaders_(sheet)
+  if (!headers.length) {
+    headers = [
+      'id',
+      'title',
+      'notes',
+      'projectId',
+      'labels',
+      'date',
+      'hour',
+      'minute',
+      'endHour',
+      'endMinute',
+    ]
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers])
+    sheet.setFrozenRows(1)
+  }
+  var row = headers.map(function (h) {
+    if (h === 'id') return task.id
+    if (h === 'title') return task.title
+    if (h === 'notes') return task.notes || ''
+    if (h === 'projectId') return task.projectId
+    if (h === 'labels') return formatLabelsCell_(task.labels)
+    return ''
+  })
+  sheet.appendRow(row)
+}
+
+function mergeLabelCatalogNames_(names) {
+  var catalogRaw = getMeta_('labelCatalog')
+  var catalog = []
+  if (catalogRaw) {
+    try {
+      var parsed = JSON.parse(catalogRaw)
+      if (Array.isArray(parsed)) catalog = parsed
+    } catch (err) {
+      /* ignore */
+    }
+  }
+  for (var i = 0; i < names.length; i++) {
+    var name = String(names[i] || '').trim()
+    if (!name) continue
+    var found = false
+    for (var c = 0; c < catalog.length; c++) {
+      var entry = catalog[c]
+      var en =
+        typeof entry === 'string'
+          ? entry
+          : String((entry && entry.name) || '')
+      if (en.toLowerCase() === name.toLowerCase()) {
+        found = true
+        break
+      }
+    }
+    if (!found) catalog.push({ name: name, description: '' })
+  }
+  setMeta_('labelCatalog', JSON.stringify(catalog))
+}
+
+/**
+ * Import incomplete Google Tasks for the script runner into Flowboard backlog.
+ * Idempotent via GoogleTasksMap (accountEmail|googleTaskId).
+ */
+function importGoogleTasks_() {
+  if (typeof Tasks === 'undefined') {
+    return {
+      ok: false,
+      error:
+        'Tasks advanced service not enabled. In Apps Script: Services (+) → Google Tasks API, then run authorizeGoogleTasks.',
+    }
+  }
+
+  var lock = LockService.getScriptLock()
+  if (!lock.tryLock(30000)) {
+    return { ok: false, error: 'Could not lock script for import; try again.' }
+  }
+
+  try {
+    ensureAll_()
+    var accountEmail = accountEmail_()
+    var tag = accountTag_(accountEmail)
+    var project = ensureDefaultProject_()
+    var existingMap = readGoogleTasksMap_()
+    var imported = 0
+    var skipped = 0
+    var mapRows = []
+    var labelNames = ['google-tasks', tag]
+
+    var listResp = Tasks.Tasklists.list({ maxResults: 100 })
+    var lists = listResp.items || []
+    var listPageToken = listResp.nextPageToken
+    while (listPageToken) {
+      var moreLists = Tasks.Tasklists.list({
+        maxResults: 100,
+        pageToken: listPageToken,
+      })
+      lists = lists.concat(moreLists.items || [])
+      listPageToken = moreLists.nextPageToken
+    }
+
+    for (var li = 0; li < lists.length; li++) {
+      var list = lists[li]
+      var listId = list.id
+      if (!listId) continue
+      var pageToken = null
+      do {
+        var opts = {
+          showCompleted: false,
+          showDeleted: false,
+          showHidden: false,
+          maxResults: 100,
+        }
+        if (pageToken) opts.pageToken = pageToken
+        var taskResp = Tasks.Tasks.list(listId, opts)
+        var items = taskResp.items || []
+        for (var ti = 0; ti < items.length; ti++) {
+          var gt = items[ti]
+          var gid = String(gt.id || '')
+          if (!gid) continue
+          if (gt.status === 'completed') {
+            skipped++
+            continue
+          }
+          var title = String(gt.title || '').trim()
+          if (!title) {
+            skipped++
+            continue
+          }
+          var key = googleTasksMapKey_(accountEmail, gid)
+          if (existingMap[key]) {
+            skipped++
+            continue
+          }
+          var flowId = Utilities.getUuid()
+          var notes = String(gt.notes || '').trim()
+          var sourceLine =
+            'Imported from Google Tasks (' +
+            accountEmail +
+            ')' +
+            (list.title ? ' · ' + list.title : '')
+          appendTaskBacklogRow_({
+            id: flowId,
+            title: title,
+            notes: notes ? notes + '\n\n' + sourceLine : sourceLine,
+            projectId: project.id,
+            labels: labelNames.slice(),
+          })
+          mapRows.push({
+            accountEmail: accountEmail,
+            googleTaskId: gid,
+            flowboardTaskId: flowId,
+            importedAt: new Date().toISOString(),
+          })
+          existingMap[key] = flowId
+          imported++
+        }
+        pageToken = taskResp.nextPageToken
+      } while (pageToken)
+    }
+
+    if (mapRows.length) {
+      var mapSheet = ss_().getSheetByName(SHEET_GTMAP)
+      var existing = readObjects_(mapSheet)
+      writeObjects_(
+        mapSheet,
+        ['accountEmail', 'googleTaskId', 'flowboardTaskId', 'importedAt'],
+        existing.concat(mapRows),
+      )
+      mergeLabelCatalogNames_(labelNames)
+      setMeta_('updatedAt', new Date().toISOString())
+    }
+
+    return {
+      ok: true,
+      imported: imported,
+      skipped: skipped,
+      accountEmail: accountEmail,
+      message:
+        imported > 0
+          ? 'Imported ' +
+            imported +
+            ' Google Task(s) from ' +
+            accountEmail +
+            ' into backlog.'
+          : 'No new Google Tasks to import for ' + accountEmail + '.',
+    }
+  } catch (err) {
+    return {
+      ok: false,
+      error: String(err && err.message ? err.message : err),
+    }
+  } finally {
+    lock.releaseLock()
   }
 }
 

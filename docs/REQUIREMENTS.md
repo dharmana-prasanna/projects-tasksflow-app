@@ -296,7 +296,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 ## 5. Persistence — Google Sheets / Calendar (Apps Script contract)
 
 ### REQ-SYNC-001 — Remote state shape
-- Sheets tabs: Projects, Flows, Tasks, Segments, Dependencies, CalendarMap, Meta.
+- Sheets tabs: Projects, Flows, Tasks, Segments, Dependencies, CalendarMap, GoogleTasksMap, Meta.
 - Tasks store identity + notes + project; Segments store per-day times.
 - Tasks may also store denormalized first-segment `date/hour/minute/endHour/endMinute` for recovery.
 
@@ -318,6 +318,14 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 
 ### REQ-SYNC-005 — Prefer local after broken remote
 - If remote tasks exist but all lack segments, and local has scheduled tasks, keep local and push.
+
+### REQ-SYNC-006 — Google Tasks → backlog
+- Apps Script action `importGoogleTasks` imports **incomplete** Google Tasks for the script runner into Flowboard as unscheduled backlog (`segments` empty / no Segments rows).
+- Idempotent via `GoogleTasksMap` keyed by `accountEmail|googleTaskId`.
+- Labels: `google-tasks` plus an account tag (email local-part).
+- Multi-account: one Apps Script project per Gmail writing to a **shared** spreadsheet (`SPREADSHEET_ID` script property for secondary accounts). Flowboard Pull/Push uses the primary web app URL; optional extra import URLs call each account’s web app, then Pull.
+- Optional time-driven trigger (`installGoogleTasksTrigger`, every 10 minutes) per account.
+- One-way only in v1 (no complete/delete back to Google Tasks).
 
 ---
 
@@ -371,3 +379,4 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 | Auth gate   | REQ-AUTH-001, REQ-AUTH-002                           | `src/auth/passwordGate.test.ts`                    |
 | Local cache | REQ-LOCAL-001, REQ-LOCAL-003                         | `src/storage/localCache.test.ts`                   |
 | Sync policy | REQ-SYNC-002, REQ-SYNC-005                           | `src/storage/syncPolicy.test.ts`                   |
+| Google Tasks import | REQ-SYNC-006                                   | `src/storage/localCache.test.ts` (import URL prefs) |

@@ -5,7 +5,11 @@ import {
   getBuiltInSheetsUrl,
   getCalendarSync,
   getSheetsUrl,
+  GOOGLE_TASKS_IMPORT_URLS_KEY,
+  loadGoogleTasksImportUrls,
   loadLocalState,
+  parseGoogleTasksImportUrls,
+  saveGoogleTasksImportUrls,
   saveLocalState,
   setCalendarSync,
   setSheetsUrl,
@@ -128,5 +132,41 @@ describe('REQ-LOCAL-003 — Sheets URL / calendar flag', () => {
     clearLocalCache()
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
     expect(localStorage.getItem('flowboard-state-v5')).toBeNull()
+  })
+})
+
+describe('REQ-SYNC-006 — Extra Google Tasks import URLs', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('parses newline and comma separated URLs', () => {
+    expect(
+      parseGoogleTasksImportUrls(
+        ' https://a.example/exec \nhttps://b.example/exec,https://c.example/exec ',
+      ),
+    ).toEqual([
+      'https://a.example/exec',
+      'https://b.example/exec',
+      'https://c.example/exec',
+    ])
+  })
+
+  it('persists extra import URLs', () => {
+    expect(GOOGLE_TASKS_IMPORT_URLS_KEY).toBe(
+      'flowboard-google-tasks-import-urls',
+    )
+    saveGoogleTasksImportUrls([
+      'https://b.example/exec',
+      'https://c.example/exec',
+    ])
+    expect(loadGoogleTasksImportUrls()).toEqual([
+      'https://b.example/exec',
+      'https://c.example/exec',
+    ])
   })
 })

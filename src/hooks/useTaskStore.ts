@@ -5,6 +5,7 @@ import {
   getCalendarSync,
   getLocalUpdatedAt,
   getSheetsUrl,
+  loadGoogleTasksImportUrls,
   loadLocalState,
   saveLocalState,
   setCalendarSync as persistCalendarSync,
@@ -12,6 +13,7 @@ import {
 } from '../storage/localCache'
 import {
   deleteInvalidTasksFromSheets,
+  importGoogleTasksFromSheets,
   loadFromSheets,
   pingSheets,
   saveToSheets,
@@ -324,6 +326,63 @@ export function useTaskStore() {
     }
   }, [sheetsUrl])
 
+  /**
+   * Import Google Tasks via primary Sheets URL + optional extra account URLs,
+   * then pull the shared board.
+   */
+  const importGoogleTasks = useCallback(async () => {
+    if (!sheetsUrl) {
+      return { ok: false as const, reason: 'No Sheets URL configured.' }
+    }
+    setSyncStatus('loading')
+    setSyncError(null)
+    try {
+      const urls = [
+        sheetsUrl,
+        ...loadGoogleTasksImportUrls().filter((u) => u !== sheetsUrl),
+      ]
+      let imported = 0
+      const parts: string[] = []
+      const errors: string[] = []
+      for (const url of urls) {
+        try {
+          const result = await importGoogleTasksFromSheets(url)
+          imported += result.imported
+          parts.push(
+            result.accountEmail
+              ? `${result.accountEmail}: ${result.imported}`
+              : result.message,
+          )
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err)
+          errors.push(message)
+        }
+      }
+      const { state: remote, updatedAt: remoteAt } =
+        await loadFromSheets(sheetsUrl)
+      skipNextRemoteSave.current = true
+      setState(remote)
+      setUpdatedAt(remoteAt)
+      setSyncStatus('synced')
+      if (errors.length && imported === 0) {
+        setSyncError(errors[0])
+        return { ok: false as const, reason: errors.join(' · ') }
+      }
+      const detail =
+        imported > 0
+          ? `Imported ${imported} task(s) into backlog (${parts.join('; ')}).`
+          : errors.length
+            ? `No new tasks. Some accounts failed: ${errors.join(' · ')}`
+            : 'No new Google Tasks to import.'
+      return { ok: true as const, detail }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setSyncStatus('error')
+      setSyncError(message)
+      return { ok: false as const, reason: message }
+    }
+  }, [sheetsUrl])
+
   const upsertProject = useCallback((project: Project) => {
     setState((prev) => {
       const exists = prev.projects.some((p) => p.id === project.id)
@@ -599,5 +658,6 @@ export function useTaskStore() {
     pullFromSheets,
     pushToSheets,
     deleteInvalidTasks,
+    importGoogleTasks,
   }
 }
