@@ -29,6 +29,7 @@ function scheduledLocal(): StoreState {
         notes: '',
         projectId: 'p1',
         labels: [],
+        priority: 'q2',
         segments: [
           {
             date: '2026-07-18',
@@ -61,6 +62,7 @@ describe('REQ-SYNC-005 — Prefer local after broken remote', () => {
           notes: '',
           projectId: 'p1',
           labels: [],
+          priority: 'q2',
           segments: [],
         },
       ],

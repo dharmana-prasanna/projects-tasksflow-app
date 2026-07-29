@@ -21,6 +21,9 @@ export type DaySegment = {
   endMinute: number
 }
 
+/** Eisenhower Matrix priority (see domain/taskPriority). */
+export type TaskPriority = 'q1' | 'q2' | 'q3' | 'q4'
+
 export type Task = {
   id: string
   title: string
@@ -28,6 +31,11 @@ export type Task = {
   projectId: string
   /** Free-form tags (normalized); used for filtering. */
   labels: string[]
+  /**
+   * Eisenhower priority quadrant:
+   * q1 Do · q2 Schedule · q3 Delegate · q4 Eliminate
+   */
+  priority: TaskPriority
   segments: DaySegment[]
 }
 

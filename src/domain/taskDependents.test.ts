@@ -19,6 +19,8 @@ const tasks: Task[] = [
     title: 'Alpha',
     notes: '',
     projectId: 'p1',
+    labels: [],
+    priority: 'q2',
     segments: [],
   },
   {
@@ -26,6 +28,8 @@ const tasks: Task[] = [
     title: 'Beta',
     notes: '',
     projectId: 'p1',
+    labels: [],
+    priority: 'q2',
     segments: [],
   },
   {
@@ -33,6 +37,8 @@ const tasks: Task[] = [
     title: 'Charlie',
     notes: '',
     projectId: 'p2',
+    labels: [],
+    priority: 'q2',
     segments: [],
   },
 ]

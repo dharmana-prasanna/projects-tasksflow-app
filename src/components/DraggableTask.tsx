@@ -2,6 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useRef } from 'react'
 import { shouldToggleTaskSelection } from '../domain/bulkTasks'
+import { normalizePriority, PRIORITY_META } from '../domain/taskPriority'
 import { formatRange } from '../time'
 import type { ColoredTask, DaySegment, Task, TaskActivateOptions } from '../types'
 
@@ -46,6 +47,8 @@ export function DraggableTask({
   }
 
   const multiDay = task.segments.length > 1
+  const priority = normalizePriority(task.priority)
+  const priorityMeta = PRIORITY_META[priority]
 
   return (
     <div
@@ -54,6 +57,7 @@ export function DraggableTask({
       className={[
         'task',
         'task--draggable',
+        `task--priority-${priority}`,
         selected ? 'task--selected' : '',
         isLinkSource ? 'task--link-source' : '',
         isLinkTarget ? 'task--link-target' : '',
@@ -93,6 +97,12 @@ export function DraggableTask({
       >
         <span className="task__title">{task.title}</span>
         <span className="task__time">{formatRange(segment)}</span>
+        <span
+          className={`task__priority task__priority--${priority}`}
+          title={priorityMeta.hint}
+        >
+          {priorityMeta.short}
+        </span>
         {multiDay && <span className="task__badge">multi-day</span>}
       </button>
 

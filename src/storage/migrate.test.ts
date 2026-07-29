@@ -35,6 +35,35 @@ describe('REQ-LOCAL-002 / REQ-MODEL-* — Migration', () => {
       },
     ])
     expect(state!.tasks[0].labels).toEqual([])
+    expect(state!.tasks[0].priority).toBe('q2')
+  })
+
+  it('normalizes task priority on migrate', () => {
+    const state = migrate({
+      projects: [{ id: 'p1', name: 'Alpha', color: '#111' }],
+      flows: [{ id: 'f1', name: 'Main', color: '#222', projectId: 'p1' }],
+      tasks: [
+        {
+          id: 't1',
+          title: 'Do now',
+          notes: '',
+          projectId: 'p1',
+          priority: 'do',
+          segments: [],
+        },
+        {
+          id: 't2',
+          title: 'Later',
+          notes: '',
+          projectId: 'p1',
+          priority: 4,
+          segments: [],
+        },
+      ],
+      dependencies: [],
+    })
+    expect(state!.tasks[0].priority).toBe('q1')
+    expect(state!.tasks[1].priority).toBe('q4')
   })
 
   it('normalizes task labels on migrate', () => {

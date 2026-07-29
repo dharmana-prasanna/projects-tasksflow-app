@@ -4,6 +4,7 @@ import {
   normalizeLabelDefs,
   normalizeLabels,
 } from '../domain/taskLabels'
+import { normalizePriority } from '../domain/taskPriority'
 import { normalizeMinute, singleDaySegment } from '../time'
 import type {
   DaySegment,
@@ -24,6 +25,7 @@ type LegacyTask = {
   projectId?: string
   color?: string
   labels?: unknown
+  priority?: unknown
   segments?: DaySegment[]
 }
 
@@ -73,6 +75,7 @@ function migrateTask(task: LegacyTask, fallbackProjectId: string, projectIds: Se
     notes: task.notes ?? '',
     projectId,
     labels: normalizeLabels(task.labels),
+    priority: normalizePriority(task.priority),
     segments,
   }
 }

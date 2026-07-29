@@ -34,13 +34,23 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Dependencies reference a `flowId`.
 
 ### REQ-MODEL-003 — Tasks and day segments
-- A task has `id`, `title`, `notes`, `projectId`, `labels[]`, and `segments[]`.
+- A task has `id`, `title`, `notes`, `projectId`, `labels[]`, `priority`, and `segments[]`.
 - A day segment has `date` (YYYY-MM-DD), `startHour`, `startMinute`, `endHour`, `endMinute`.
 - Minutes are quantized to **0 | 15 | 30 | 45**.
 - End time is **exclusive** on the 15-minute grid (e.g. 6:00–7:00 occupies 6:00, 6:15, 6:30, 6:45).
 - End-of-day may be represented as hour `24`, minute `0`.
 - A task may span multiple days via multiple segments; each day may have its own start/end.
 - **`segments: []` means unscheduled** (backlog). Migrate preserves explicit empty arrays; missing segments on legacy data may still invent a recovery segment.
+
+### REQ-MODEL-006 — Task priority (Eisenhower)
+- Each task has a **priority** quadrant: `q1` | `q2` | `q3` | `q4`.
+  - **q1 Do** — Important & Urgent
+  - **q2 Schedule** — Important & Not urgent (default for new/legacy tasks)
+  - **q3 Delegate** — Not important & Urgent
+  - **q4 Eliminate** — Not important & Not urgent
+- `normalizePriority` accepts `q1`–`q4`, numeric 1–4, and aliases (`do`, `schedule`, `delegate`, `eliminate`); invalid/missing → `q2`.
+- UI: task editor radio group; board/backlog badges; chrome **Priority** filter; bulk bar **Set** priority.
+- Sheets: Tasks tab `priority` column (Apps Script `ensureTaskPriorityColumn_` / `normalizePriority_`).
 
 ### REQ-MODEL-005 — Task labels
 - A task may have **zero or more labels** (`labels: string[]`).
@@ -297,7 +307,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 
 ### REQ-SYNC-001 — Remote state shape
 - Sheets tabs: Projects, Flows, Tasks, Segments, Dependencies, CalendarMap, GoogleTasksMap, Meta.
-- Tasks store identity + notes + project; Segments store per-day times.
+- Tasks store identity + notes + project + labels + **priority**; Segments store per-day times.
 - Tasks may also store denormalized first-segment `date/hour/minute/endHour/endMinute` for recovery.
 
 ### REQ-SYNC-002 — Save guards
@@ -367,6 +377,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 | Time grid   | REQ-TIME-001 … 008                                   | `src/time.test.ts`                                 |
 | Model migrate | REQ-LOCAL-002, REQ-MODEL-*                         | `src/storage/migrate.test.ts`                      |
 | Task labels | REQ-MODEL-005, REQ-UI-017                            | `src/domain/taskLabels.test.ts`                    |
+| Task priority | REQ-MODEL-006                                      | `src/domain/taskPriority.test.ts`                  |
 | Unscheduled backlog | REQ-UI-018, REQ-MODEL-003, REQ-LOCAL-008       | `src/domain/unscheduled.test.ts`, `src/chromePrefs.test.ts`, `src/time.test.ts` |
 | Dependencies| REQ-DEP-001 … 005, REQ-MODEL-004                     | `src/domain/dependencies.test.ts`                  |
 | Slot select | REQ-TIME-007, REQ-UI-016                             | `src/time.test.ts`, `src/domain/slotSelectGesture.test.ts` |

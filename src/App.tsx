@@ -13,6 +13,7 @@ import { CalendarGrid } from './components/CalendarGrid'
 import { ChromePanel } from './components/ChromePanel'
 import { LabelBar } from './components/LabelBar'
 import { LabelFilterBanner } from './components/LabelFilterBanner'
+import { PriorityBar } from './components/PriorityBar'
 import type { ColoredDependency } from './components/DependencyArrows'
 import { DependencyGraph } from './components/DependencyGraph'
 import { UnscheduledPanel } from './components/UnscheduledPanel'
@@ -28,6 +29,12 @@ import {
   moveTasksToDate,
   toggleTaskId,
 } from './domain/bulkTasks'
+import {
+  applyBulkPriority,
+  DEFAULT_TASK_PRIORITY,
+  priorityLabel,
+  taskMatchesPriorityFilter,
+} from './domain/taskPriority'
 import {
   mergeLabelCatalog,
   selectLabelFilter,
@@ -47,6 +54,7 @@ import type {
   Project,
   Task,
   TaskActivateOptions,
+  TaskPriority,
 } from './types'
 import { loadMainView, saveMainView, type MainView } from './viewPrefs'
 
@@ -95,6 +103,9 @@ export default function App({ onLock }: AppProps) {
   const [cursor, setCursor] = useState(() => startOfDay(new Date()))
   const [projectFilter, setProjectFilter] = useState<string | 'all'>('all')
   const [labelFilter, setLabelFilter] = useState<string[]>([])
+  const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>(
+    'all',
+  )
   const [activeFlowId, setActiveFlowId] = useState<string | null>(null)
   const [chromeMinimized, setChromeMinimized] = useState(loadChromeMinimized)
   const [backlogHidden, setBacklogHidden] = useState(loadBacklogHidden)
@@ -199,8 +210,12 @@ export default function App({ onLock }: AppProps) {
       projectFilter === 'all'
         ? coloredTasks
         : coloredTasks.filter((t) => t.projectId === projectFilter)
-    return byProject.filter((t) => taskMatchesLabelFilter(t, labelFilter))
-  }, [coloredTasks, projectFilter, labelFilter])
+    return byProject.filter(
+      (t) =>
+        taskMatchesLabelFilter(t, labelFilter) &&
+        taskMatchesPriorityFilter(t, priorityFilter),
+    )
+  }, [coloredTasks, projectFilter, labelFilter, priorityFilter])
 
   const scheduledTasks = useMemo(
     () => filterScheduledTasks(visibleTasks),
@@ -247,8 +262,12 @@ export default function App({ onLock }: AppProps) {
         : labelFilter.length === 1
           ? labelFilter[0]
           : `${labelFilter.length} labels`
-    return `${projectLabel} · ${flowLabel} · ${labelsLabel}`
-  }, [projectFilter, projects, activeFlow, labelFilter])
+    const priorityLabelText =
+      priorityFilter === 'all'
+        ? 'All priorities'
+        : priorityLabel(priorityFilter)
+    return `${projectLabel} · ${flowLabel} · ${labelsLabel} · ${priorityLabelText}`
+  }, [projectFilter, projects, activeFlow, labelFilter, priorityFilter])
 
   const days = useMemo(
     () =>
@@ -305,6 +324,7 @@ export default function App({ onLock }: AppProps) {
       notes: '',
       projectId: defaultProjectId(),
       labels: [],
+      priority: DEFAULT_TASK_PRIORITY,
       segments: [
         singleDaySegment(
           range.date,
@@ -383,12 +403,22 @@ export default function App({ onLock }: AppProps) {
     )
   }
 
+  function handleBulkSetPriority(priority: TaskPriority) {
+    if (selectedTasks.length === 0) return
+    const next = applyBulkPriority(selectedTasks, priority)
+    upsertTasks(next)
+    showToast(
+      `Set ${priorityLabel(priority)} on ${next.length} task${next.length === 1 ? '' : 's'}`,
+    )
+  }
+
   function handleCreateUnscheduled() {
     setEditingTask({
       title: '',
       notes: '',
       projectId: defaultProjectId(),
       labels: [],
+      priority: DEFAULT_TASK_PRIORITY,
       segments: [],
     })
   }
@@ -499,6 +529,7 @@ export default function App({ onLock }: AppProps) {
                     notes: '',
                     projectId: defaultProjectId(),
                     labels: [],
+                    priority: DEFAULT_TASK_PRIORITY,
                     segments: [singleDaySegment(days[0], 9, 0)],
                   })
                 }
@@ -518,6 +549,7 @@ export default function App({ onLock }: AppProps) {
                   setDaySpan(7)
                   setProjectFilter('all')
                   setLabelFilter([])
+                  setPriorityFilter('all')
                   setActiveFlowId(null)
                   setCursor(startOfDay(new Date()))
                   showToast(
@@ -612,6 +644,16 @@ export default function App({ onLock }: AppProps) {
           onEditProject={(p) => setEditingProject(p)}
         />
 
+        <PriorityBar
+          tasks={
+            projectFilter === 'all'
+              ? tasks
+              : tasks.filter((t) => t.projectId === projectFilter)
+          }
+          selected={priorityFilter}
+          onSelect={setPriorityFilter}
+        />
+
         <LabelBar
           labels={allLabels}
           tasks={tasks}
@@ -652,8 +694,8 @@ export default function App({ onLock }: AppProps) {
           {mainView === 'board' ? (
             <>
               Drag across empty cells to set start/end (one cell = 15 min). Use ✓
-              or ⌘/Ctrl‑click to multi‑select tasks, then move by date or labels.
-              Select a <strong>flow</strong>, then drag → to link.
+              or ⌘/Ctrl‑click to multi‑select tasks, then move by date, priority,
+              or labels. Select a <strong>flow</strong>, then drag → to link.
             </>
           ) : (
             <>
@@ -683,6 +725,7 @@ export default function App({ onLock }: AppProps) {
           onMoveToDate={handleBulkMoveToDate}
           onAddLabel={handleBulkAddLabel}
           onRemoveLabel={handleBulkRemoveLabel}
+          onSetPriority={handleBulkSetPriority}
           onClear={() => setSelectedTaskIds([])}
         />
       )}

@@ -17,6 +17,7 @@ function task(partial: Partial<Task> & Pick<Task, 'id'>): Task {
     notes: '',
     projectId: 'p1',
     labels: partial.labels ?? [],
+    priority: 'q2',
     segments: partial.segments ?? [],
     ...partial,
   }

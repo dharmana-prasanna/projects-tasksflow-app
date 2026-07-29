@@ -2,6 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useRef } from 'react'
 import { shouldToggleTaskSelection } from '../domain/bulkTasks'
+import { normalizePriority, PRIORITY_META } from '../domain/taskPriority'
 import type { ColoredTask, Task, TaskActivateOptions } from '../types'
 
 type Props = {
@@ -32,12 +33,16 @@ export function UnscheduledTaskCard({
     if (isDragging) dragged.current = true
   }, [isDragging])
 
+  const priority = normalizePriority(task.priority)
+  const priorityMeta = PRIORITY_META[priority]
+
   return (
     <div
       ref={setNodeRef}
       data-task-id={task.id}
       className={[
         'unscheduled-card',
+        `unscheduled-card--priority-${priority}`,
         selected ? 'unscheduled-card--selected' : '',
         isDragging ? 'unscheduled-card--dragging' : '',
       ]
@@ -77,7 +82,15 @@ export function UnscheduledTaskCard({
         }}
       >
         <span className="unscheduled-card__title">{task.title || '(untitled)'}</span>
-        <span className="unscheduled-card__hint">Drag to calendar</span>
+        <span className="unscheduled-card__meta">
+          <span
+            className={`unscheduled-card__priority unscheduled-card__priority--${priority}`}
+            title={priorityMeta.hint}
+          >
+            {priorityMeta.short}
+          </span>
+          <span className="unscheduled-card__hint">Drag to calendar</span>
+        </span>
       </button>
     </div>
   )

@@ -181,6 +181,28 @@ function ensureTaskLabelsColumn_() {
   }
 }
 
+/** Append a priority column on existing Tasks sheets. */
+function ensureTaskPriorityColumn_() {
+  var sheet = ss_().getSheetByName(SHEET_TASKS)
+  if (!sheet) return
+  var lastCol = Math.max(1, sheet.getLastColumn())
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String)
+  if (headers.indexOf('priority') === -1) {
+    sheet.getRange(1, headers.length + 1).setValue('priority')
+  }
+}
+
+function normalizePriority_(raw) {
+  var s = String(raw == null ? '' : raw)
+    .trim()
+    .toLowerCase()
+  if (s === 'q1' || s === '1' || s === 'do' || s === 'urgent') return 'q1'
+  if (s === 'q2' || s === '2' || s === 'schedule') return 'q2'
+  if (s === 'q3' || s === '3' || s === 'delegate') return 'q3'
+  if (s === 'q4' || s === '4' || s === 'eliminate' || s === 'drop') return 'q4'
+  return 'q2'
+}
+
 function parseLabelsCell_(raw) {
   if (raw === null || raw === undefined || raw === '') return []
   var text = String(raw)
@@ -226,8 +248,16 @@ function formatLabelsCell_(labels) {
 function ensureAll_() {
   ensureSheet_(SHEET_PROJECTS, ['id', 'name', 'color'])
   ensureSheet_(SHEET_FLOWS, ['id', 'name', 'color', 'projectId'])
-  ensureSheet_(SHEET_TASKS, ['id', 'title', 'notes', 'projectId', 'labels'])
+  ensureSheet_(SHEET_TASKS, [
+    'id',
+    'title',
+    'notes',
+    'projectId',
+    'labels',
+    'priority',
+  ])
   ensureTaskLabelsColumn_()
+  ensureTaskPriorityColumn_()
   ensureSheet_(SHEET_SEGS, [
     'taskId',
     'date',
@@ -442,6 +472,7 @@ function loadState_() {
       notes: String(r.notes || ''),
       projectId: String(r.projectId || ''),
       labels: parseLabelsCell_(r.labels),
+      priority: normalizePriority_(r.priority),
       segments: segments,
     })
   }
@@ -563,6 +594,7 @@ function saveState_(state, opts) {
       notes: task.notes || '',
       projectId: task.projectId,
       labels: task.labels || [],
+      priority: normalizePriority_(task.priority),
       segments: segs,
     })
     for (var s = 0; s < segs.length; s++) {
@@ -609,6 +641,7 @@ function saveState_(state, opts) {
       'notes',
       'projectId',
       'labels',
+      'priority',
       'date',
       'hour',
       'minute',
@@ -623,6 +656,7 @@ function saveState_(state, opts) {
         notes: t.notes || '',
         projectId: t.projectId,
         labels: formatLabelsCell_(t.labels),
+        priority: normalizePriority_(t.priority),
         date: first ? String(first.date) : '',
         hour: first ? first.startHour : '',
         minute: first ? first.startMinute : '',
@@ -1105,6 +1139,7 @@ function appendTaskBacklogRow_(task) {
       'notes',
       'projectId',
       'labels',
+      'priority',
       'date',
       'hour',
       'minute',
@@ -1120,6 +1155,7 @@ function appendTaskBacklogRow_(task) {
     if (h === 'notes') return task.notes || ''
     if (h === 'projectId') return task.projectId
     if (h === 'labels') return formatLabelsCell_(task.labels)
+    if (h === 'priority') return normalizePriority_(task.priority)
     return ''
   })
   sheet.appendRow(row)
@@ -1243,6 +1279,7 @@ function importGoogleTasks_() {
             notes: notes ? notes + '\n\n' + sourceLine : sourceLine,
             projectId: project.id,
             labels: labelNames.slice(),
+            priority: 'q2',
           })
           mapRows.push({
             accountEmail: accountEmail,

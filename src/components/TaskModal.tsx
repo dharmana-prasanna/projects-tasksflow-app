@@ -8,6 +8,12 @@ import {
   removeTaskLabel,
 } from '../domain/taskLabels'
 import {
+  DEFAULT_TASK_PRIORITY,
+  normalizePriority,
+  PRIORITY_META,
+  TASK_PRIORITIES,
+} from '../domain/taskPriority'
+import {
   currentDependentIds,
   eligibleDependentTasks,
   filterDependentTasks,
@@ -29,6 +35,7 @@ import type {
   LabelDef,
   Project,
   Task,
+  TaskPriority,
 } from '../types'
 
 export type TaskSavePayload = {
@@ -81,6 +88,7 @@ export function TaskModal({
   const [dependentQuery, setDependentQuery] = useState('')
   const [labels, setLabels] = useState<string[]>([])
   const [labelDraft, setLabelDraft] = useState('')
+  const [priority, setPriority] = useState<TaskPriority>(DEFAULT_TASK_PRIORITY)
   const [unscheduled, setUnscheduled] = useState(false)
 
   const activeFlow = activeFlowId
@@ -97,6 +105,7 @@ export function TaskModal({
     setDependentQuery('')
     setLabels(normalizeLabels(initial.labels))
     setLabelDraft('')
+    setPriority(normalizePriority(initial.priority))
 
     const explicitEmpty =
       Array.isArray(initial.segments) && initial.segments.length === 0
@@ -221,6 +230,7 @@ export function TaskModal({
       notes: notes.trim(),
       projectId,
       labels: normalized,
+      priority: normalizePriority(priority),
       segments: unscheduled ? [] : segments.map(normalizeSegment),
     }
     const labelMeta: LabelDef[] = normalized.map((name) => ({
@@ -300,6 +310,47 @@ export function TaskModal({
               </select>
             </div>
           </label>
+
+          <fieldset className="task-priority">
+            <legend className="task-priority__legend">
+              Priority
+              <span
+                className="field-help"
+                title="Eisenhower Matrix: Q1 Do (important & urgent), Q2 Schedule (important), Q3 Delegate (urgent), Q4 Eliminate."
+                aria-label="Eisenhower Matrix priorities"
+              >
+                ?
+              </span>
+            </legend>
+            <div
+              className="task-priority__options"
+              role="radiogroup"
+              aria-label="Task priority"
+            >
+              {TASK_PRIORITIES.map((id) => {
+                const meta = PRIORITY_META[id]
+                return (
+                  <label
+                    key={id}
+                    className={`task-priority__option task-priority__option--${id}${
+                      priority === id ? ' task-priority__option--active' : ''
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="task-priority"
+                      value={id}
+                      checked={priority === id}
+                      onChange={() => setPriority(id)}
+                    />
+                    <span className="task-priority__short">{meta.short}</span>
+                    <span className="task-priority__label">{meta.label}</span>
+                    <span className="task-priority__hint">{meta.hint}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </fieldset>
 
           <fieldset className="task-labels">
             <legend className="task-labels__legend">

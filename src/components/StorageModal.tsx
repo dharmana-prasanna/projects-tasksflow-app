@@ -338,7 +338,8 @@ export function StorageModal({
         </ol>
         <p className="storage-note">
           Sheets tabs: Projects, Flows, Tasks, Segments, Dependencies, CalendarMap,
-          GoogleTasksMap, Meta. Browser keeps a local cache for fast loads.
+          GoogleTasksMap, Meta. Tasks include a <code>priority</code> column (q1–q4).
+          Browser keeps a local cache for fast loads.
         </p>
       </div>
     </div>
