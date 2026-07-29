@@ -1,5 +1,7 @@
 import type { Task, TaskPriority } from '../types'
 
+export type { TaskPriority }
+
 /** Eisenhower Matrix quadrants (priority levels). */
 export const TASK_PRIORITIES = ['q1', 'q2', 'q3', 'q4'] as const
 
