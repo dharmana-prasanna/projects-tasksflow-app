@@ -162,9 +162,10 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 ### REQ-UI-013 — Pick dependents in task editor
 - Task modal lists other existing tasks as **Dependent tasks** (multi-select checkboxes).
 - A **search field** filters that list by case-insensitive title substring (`filterDependentTasks`); empty query shows all eligible tasks.
+- Compact **priority chips** (All / DoNow / Schedule / Delegate) further filter the list; title and priority combine (AND). Priority filter resets with search when the modal opens / switches task.
 - The search control is **compact** (not full modal width); dependent task titles **wrap** to multiple lines (no single-line ellipsis truncation).
 - Filtering only affects visibility — checked selections persist even when a task is temporarily hidden by the query.
-- Search resets when the task modal opens / switches task.
+- Search and priority filter reset when the task modal opens / switches task.
 - Links are created on the **active flow**: selected tasks become `from(current) → to(selected)`.
 - On save, selection is synced: new checks add dependencies; unchecked existing links on that flow are removed.
 - Cycle / duplicate / self-link rules still apply (`validateNewDependency`); failures are skipped and reported in the toast.

@@ -29,7 +29,7 @@ const tasks: Task[] = [
     notes: '',
     projectId: 'p1',
     labels: [],
-    priority: 'q2',
+    priority: 'q1',
     segments: [],
   },
   {
@@ -38,7 +38,7 @@ const tasks: Task[] = [
     notes: '',
     projectId: 'p2',
     labels: [],
-    priority: 'q2',
+    priority: 'q3',
     segments: [],
   },
 ]
@@ -115,7 +115,25 @@ describe('REQ-UI-013 — Pick dependents in task editor', () => {
     expect(filterDependentTasks(eligible, 'zzz')).toEqual([])
   })
 
-  it('task modal wires a dependents search field', () => {
+  it('filterDependentTasks ANDs title with priority', () => {
+    const eligible = eligibleDependentTasks(tasks, 'a')
+    expect(filterDependentTasks(eligible, '', 'q1').map((t) => t.id)).toEqual([
+      'b',
+    ])
+    expect(filterDependentTasks(eligible, '', 'q3').map((t) => t.id)).toEqual([
+      'c',
+    ])
+    expect(filterDependentTasks(eligible, 'char', 'q3').map((t) => t.id)).toEqual(
+      ['c'],
+    )
+    expect(filterDependentTasks(eligible, 'char', 'q1')).toEqual([])
+    expect(filterDependentTasks(eligible, '', 'all').map((t) => t.id)).toEqual([
+      'b',
+      'c',
+    ])
+  })
+
+  it('task modal wires dependents search and priority filter', () => {
     const src = readFileSync(
       resolve(here, '../components/TaskModal.tsx'),
       'utf8',
@@ -123,6 +141,8 @@ describe('REQ-UI-013 — Pick dependents in task editor', () => {
     expect(src).toMatch(/filterDependentTasks/)
     expect(src).toMatch(/dependents__search/)
     expect(src).toMatch(/dependentQuery/)
+    expect(src).toMatch(/dependentPriority/)
+    expect(src).toMatch(/dependents__priority/)
   })
 
   it('dependents search is compact and titles wrap', () => {

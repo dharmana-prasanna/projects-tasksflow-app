@@ -11,6 +11,7 @@ import {
   DEFAULT_TASK_PRIORITY,
   normalizePriority,
   PRIORITY_META,
+  priorityLabel,
   UI_PRIORITIES,
   uiPriority,
 } from '../domain/taskPriority'
@@ -87,6 +88,9 @@ export function TaskModal({
   const [segments, setSegments] = useState<DaySegment[]>([])
   const [dependentIds, setDependentIds] = useState<string[]>([])
   const [dependentQuery, setDependentQuery] = useState('')
+  const [dependentPriority, setDependentPriority] = useState<
+    TaskPriority | 'all'
+  >('all')
   const [labels, setLabels] = useState<string[]>([])
   const [labelDraft, setLabelDraft] = useState('')
   const [priority, setPriority] = useState<TaskPriority>(DEFAULT_TASK_PRIORITY)
@@ -104,6 +108,7 @@ export function TaskModal({
     setNotes(initial.notes ?? '')
     setProjectId(initial.projectId ?? projects[0]?.id ?? '')
     setDependentQuery('')
+    setDependentPriority('all')
     setLabels(normalizeLabels(initial.labels))
     setLabelDraft('')
     setPriority(normalizePriority(initial.priority))
@@ -151,8 +156,8 @@ export function TaskModal({
     [tasks, initial?.id],
   )
   const visibleCandidates = useMemo(
-    () => filterDependentTasks(candidates, dependentQuery),
-    [candidates, dependentQuery],
+    () => filterDependentTasks(candidates, dependentQuery, dependentPriority),
+    [candidates, dependentQuery, dependentPriority],
   )
 
   const rangeLabel = useMemo(() => {
@@ -587,19 +592,64 @@ export function TaskModal({
                   On flow <strong>{activeFlow.name}</strong>, check tasks that
                   depend on this one (creates arrows this → selected).
                 </p>
-                <label className="dependents__search">
-                  Search dependents
-                  <input
-                    type="search"
-                    value={dependentQuery}
-                    onChange={(e) => setDependentQuery(e.target.value)}
-                    placeholder="Filter by title…"
-                    autoComplete="off"
-                  />
-                </label>
+                <div className="dependents__filters">
+                  <label className="dependents__search">
+                    Search dependents
+                    <input
+                      type="search"
+                      value={dependentQuery}
+                      onChange={(e) => setDependentQuery(e.target.value)}
+                      placeholder="Filter by title…"
+                      autoComplete="off"
+                    />
+                  </label>
+                  <div
+                    className="dependents__priority"
+                    role="group"
+                    aria-label="Filter dependents by priority"
+                  >
+                    <button
+                      type="button"
+                      className={`priority-chip${
+                        dependentPriority === 'all'
+                          ? ' priority-chip--active'
+                          : ''
+                      }`}
+                      onClick={() => setDependentPriority('all')}
+                      aria-pressed={dependentPriority === 'all'}
+                    >
+                      All
+                    </button>
+                    {UI_PRIORITIES.map((id) => {
+                      const meta = PRIORITY_META[id]
+                      const active = dependentPriority === id
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          className={`priority-chip priority-chip--${id}${
+                            active ? ' priority-chip--active' : ''
+                          }`}
+                          onClick={() => setDependentPriority(id)}
+                          aria-pressed={active}
+                          title={meta.hint}
+                        >
+                          {meta.short}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
                 {visibleCandidates.length === 0 ? (
                   <p className="modal__tip">
-                    No tasks match “{dependentQuery.trim()}”.
+                    No tasks match
+                    {dependentQuery.trim()
+                      ? ` “${dependentQuery.trim()}”`
+                      : ''}
+                    {dependentPriority !== 'all'
+                      ? `${dependentQuery.trim() ? ' ·' : ''} ${priorityLabel(dependentPriority)}`
+                      : ''}
+                    .
                   </p>
                 ) : (
                   <div
@@ -610,6 +660,7 @@ export function TaskModal({
                     {visibleCandidates.map((t) => {
                       const checked = dependentIds.includes(t.id)
                       const project = projects.find((p) => p.id === t.projectId)
+                      const prio = uiPriority(normalizePriority(t.priority))
                       return (
                         <label key={t.id} className="dependents__item">
                           <input
@@ -625,6 +676,12 @@ export function TaskModal({
                             aria-hidden
                           />
                           <span className="dependents__title">{t.title}</span>
+                          <span
+                            className={`dependents__priority-tag dependents__priority-tag--${prio}`}
+                            title={PRIORITY_META[prio].hint}
+                          >
+                            {PRIORITY_META[prio].short}
+                          </span>
                         </label>
                       )
                     })}

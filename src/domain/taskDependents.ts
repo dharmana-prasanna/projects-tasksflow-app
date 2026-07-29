@@ -1,4 +1,5 @@
-import type { Dependency, Task } from '../types'
+import type { Dependency, Task, TaskPriority } from '../types'
+import { taskMatchesPriorityFilter } from './taskPriority'
 
 /** Other tasks that can be linked as dependents of `fromId`. */
 export function eligibleDependentTasks(
@@ -12,16 +13,19 @@ export function eligibleDependentTasks(
 }
 
 /**
- * Filter eligible dependents by a case-insensitive substring of the title.
- * Empty / whitespace query returns the list unchanged (still sorted).
+ * Filter eligible dependents by title substring and optional priority.
+ * Empty / whitespace query does not restrict by title; priority `'all'` is open.
  */
 export function filterDependentTasks(
   tasks: Task[],
   query: string,
+  priority: TaskPriority | 'all' = 'all',
 ): Task[] {
   const q = query.trim().toLowerCase()
-  if (!q) return tasks
-  return tasks.filter((t) => t.title.toLowerCase().includes(q))
+  return tasks.filter((t) => {
+    if (q && !t.title.toLowerCase().includes(q)) return false
+    return taskMatchesPriorityFilter(t, priority)
+  })
 }
 
 /** Task ids already linked as dependents of `fromId` on `flowId`. */
