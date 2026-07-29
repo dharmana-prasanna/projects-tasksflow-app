@@ -192,6 +192,78 @@ function ensureTaskPriorityColumn_() {
   }
 }
 
+var GTMAP_HEADERS = [
+  'accountEmail',
+  'googleTaskId',
+  'flowboardTaskId',
+  'importedAt',
+  'status',
+  'deletedAt',
+]
+
+/** Append status/deletedAt on existing GoogleTasksMap sheets. */
+function ensureGoogleTasksMapColumns_() {
+  var sheet = ss_().getSheetByName(SHEET_GTMAP)
+  if (!sheet) return
+  var lastCol = Math.max(1, sheet.getLastColumn())
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String)
+  for (var i = 0; i < GTMAP_HEADERS.length; i++) {
+    var name = GTMAP_HEADERS[i]
+    if (headers.indexOf(name) === -1) {
+      headers.push(name)
+      sheet.getRange(1, headers.length).setValue(name)
+    }
+  }
+}
+
+function normalizeGtMapRow_(row) {
+  var status = String((row && row.status) || 'imported')
+    .trim()
+    .toLowerCase()
+  return {
+    accountEmail: String((row && row.accountEmail) || '').toLowerCase(),
+    googleTaskId: String((row && row.googleTaskId) || ''),
+    flowboardTaskId: String((row && row.flowboardTaskId) || ''),
+    importedAt: (row && row.importedAt) || '',
+    status: status === 'deleted' ? 'deleted' : 'imported',
+    deletedAt: (row && row.deletedAt) || '',
+  }
+}
+
+/**
+ * When a Flowboard task is gone from a Push/save, keep its GoogleTasksMap
+ * row as status=deleted so the same Google Task is not reimported.
+ */
+function tombstoneOrphanGoogleTasksMap_(taskIds) {
+  ensureGoogleTasksMapColumns_()
+  var sheet = ss_().getSheetByName(SHEET_GTMAP)
+  var rows = readObjects_(sheet)
+  if (!rows.length) return 0
+  var idSet = {}
+  for (var i = 0; i < taskIds.length; i++) {
+    idSet[String(taskIds[i])] = true
+  }
+  var changed = false
+  var out = []
+  for (var r = 0; r < rows.length; r++) {
+    var row = normalizeGtMapRow_(rows[r])
+    if (
+      row.flowboardTaskId &&
+      !idSet[row.flowboardTaskId] &&
+      row.status !== 'deleted'
+    ) {
+      row.status = 'deleted'
+      row.deletedAt = new Date().toISOString()
+      changed = true
+    }
+    if (row.accountEmail && row.googleTaskId) out.push(row)
+  }
+  if (changed) {
+    writeObjects_(sheet, GTMAP_HEADERS, out)
+  }
+  return changed ? 1 : 0
+}
+
 function normalizePriority_(raw) {
   var s = String(raw == null ? '' : raw)
     .trim()
@@ -283,7 +355,10 @@ function ensureAll_() {
     'googleTaskId',
     'flowboardTaskId',
     'importedAt',
+    'status',
+    'deletedAt',
   ])
+  ensureGoogleTasksMapColumns_()
   ensureSheet_(SHEET_META, ['key', 'value'])
 }
 
@@ -689,6 +764,13 @@ function saveState_(state, opts) {
   )
 
   setMeta_('labelCatalog', JSON.stringify(state.labels || []))
+
+  // Keep GoogleTasksMap rows for deleted Flowboard tasks so import won't recreate them.
+  tombstoneOrphanGoogleTasksMap_(
+    hydrated.map(function (t) {
+      return t.id
+    }),
+  )
 
   return { ok: true }
 }
@@ -1111,13 +1193,30 @@ function readGoogleTasksMap_() {
   var rows = readObjects_(ss_().getSheetByName(SHEET_GTMAP))
   var map = {}
   for (var i = 0; i < rows.length; i++) {
-    var email = String(rows[i].accountEmail || '').toLowerCase()
-    var gid = String(rows[i].googleTaskId || '')
-    var fid = String(rows[i].flowboardTaskId || '')
-    if (!email || !gid || !fid) continue
-    map[googleTasksMapKey_(email, gid)] = fid
+    var row = normalizeGtMapRow_(rows[i])
+    if (!row.accountEmail || !row.googleTaskId) continue
+    // Any map row blocks reimport, including deleted tombstones (no flowboard task).
+    map[googleTasksMapKey_(row.accountEmail, row.googleTaskId)] = row
   }
   return map
+}
+
+function appendGoogleTasksMapRow_(row) {
+  ensureGoogleTasksMapColumns_()
+  var sheet = ss_().getSheetByName(SHEET_GTMAP)
+  var headers = sheetHeaders_(sheet)
+  if (!headers.length) {
+    headers = GTMAP_HEADERS.slice()
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers])
+    sheet.setFrozenRows(1)
+  }
+  var normalized = normalizeGtMapRow_(row)
+  sheet.appendRow(
+    headers.map(function (h) {
+      var v = normalized[h]
+      return v === undefined || v === null ? '' : v
+    }),
+  )
 }
 
 function ensureDefaultProject_() {
@@ -1204,7 +1303,8 @@ function mergeLabelCatalogNames_(names) {
 
 /**
  * Import incomplete Google Tasks for the script runner into Flowboard backlog.
- * Idempotent via GoogleTasksMap (accountEmail|googleTaskId).
+ * Idempotent via GoogleTasksMap (accountEmail|googleTaskId), including
+ * status=deleted tombstones after the Flowboard task was removed.
  */
 function importGoogleTasks_() {
   if (typeof Tasks === 'undefined') {
@@ -1228,7 +1328,6 @@ function importGoogleTasks_() {
     var existingMap = readGoogleTasksMap_()
     var imported = 0
     var skipped = 0
-    var mapRows = []
     var labelNames = ['google-tasks', tag]
 
     var listResp = Tasks.Tasklists.list({ maxResults: 100 })
@@ -1291,27 +1390,24 @@ function importGoogleTasks_() {
             labels: labelNames.slice(),
             priority: 'q2',
           })
-          mapRows.push({
+          var mapRow = {
             accountEmail: accountEmail,
             googleTaskId: gid,
             flowboardTaskId: flowId,
             importedAt: new Date().toISOString(),
-          })
-          existingMap[key] = flowId
+            status: 'imported',
+            deletedAt: '',
+          }
+          // Write map immediately so a later crash still blocks reimport / tombstone.
+          appendGoogleTasksMapRow_(mapRow)
+          existingMap[key] = normalizeGtMapRow_(mapRow)
           imported++
         }
         pageToken = taskResp.nextPageToken
       } while (pageToken)
     }
 
-    if (mapRows.length) {
-      var mapSheet = ss_().getSheetByName(SHEET_GTMAP)
-      var existing = readObjects_(mapSheet)
-      writeObjects_(
-        mapSheet,
-        ['accountEmail', 'googleTaskId', 'flowboardTaskId', 'importedAt'],
-        existing.concat(mapRows),
-      )
+    if (imported > 0) {
       mergeLabelCatalogNames_(labelNames)
       setMeta_('updatedAt', new Date().toISOString())
     }

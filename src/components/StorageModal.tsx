@@ -338,7 +338,9 @@ export function StorageModal({
         </ol>
         <p className="storage-note">
           Sheets tabs: Projects, Flows, Tasks, Segments, Dependencies, CalendarMap,
-          GoogleTasksMap, Meta. Tasks include a <code>priority</code> column (q1–q4).
+          GoogleTasksMap, Meta. Tasks include a <code>priority</code> column.
+          GoogleTasksMap rows use <code>status</code> (<code>imported</code> /{' '}
+          <code>deleted</code>) so backlog deletes are not reimported.
           Browser keeps a local cache for fast loads.
         </p>
       </div>

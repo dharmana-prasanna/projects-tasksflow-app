@@ -336,6 +336,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 ### REQ-SYNC-006 — Google Tasks → backlog
 - Apps Script action `importGoogleTasks` imports **incomplete** Google Tasks for the script runner into Flowboard as unscheduled backlog (`segments` empty / no Segments rows).
 - Idempotent via `GoogleTasksMap` keyed by `accountEmail|googleTaskId`.
+- **Delete suppression:** when a Flowboard task is removed and the board is saved/Pushed, `saveState_` marks the matching `GoogleTasksMap` row `status=deleted` (keeps `googleTaskId`). Import skips both `imported` and `deleted` rows so deleted backlog items are not recreated. To allow reimport later, remove that map row (or clear `deleted`) in the sheet.
 - Labels: `google-tasks` plus an account tag (email local-part).
 - Multi-account: one Apps Script project per Gmail writing to a **shared** spreadsheet (`SPREADSHEET_ID` script property for secondary accounts). Flowboard Pull/Push uses the primary web app URL; optional extra import URLs call each account’s web app, then Pull.
 - Optional time-driven trigger (`installGoogleTasksTrigger`, every 10 minutes) per account.
