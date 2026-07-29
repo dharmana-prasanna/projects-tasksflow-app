@@ -43,13 +43,12 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - **`segments: []` means unscheduled** (backlog). Migrate preserves explicit empty arrays; missing segments on legacy data may still invent a recovery segment.
 
 ### REQ-MODEL-006 — Task priority (Eisenhower)
-- Each task has a **priority** quadrant: `q1` | `q2` | `q3` | `q4`.
-  - **q1 Do** — Important & Urgent
+- Each task has a **priority**: `q1` | `q2` | `q3` (UI: **DoNow**, **Schedule**, **Delegate**).
+  - **q1 DoNow** — Important & Urgent
   - **q2 Schedule** — Important & Not urgent (default for new/legacy tasks)
-  - **q3 Delegate** — Not important & Urgent
-  - **q4 Eliminate** — Not important & Not urgent
-- `normalizePriority` accepts `q1`–`q4`, numeric 1–4, and aliases (`do`, `schedule`, `delegate`, `eliminate`); invalid/missing → `q2`.
-- UI: task editor radio group; board/backlog badges; chrome **Priority** filter; bulk bar **Set** priority.
+  - **q3 Delegate** — Urgent / less important (also maps legacy `q4` / eliminate)
+- `normalizePriority` accepts `q1`–`q3`, numeric 1–3, and aliases (`donow`, `schedule`, `delegate`); invalid/missing → `q2`; `q4`/`eliminate` → `q3`.
+- UI: compact three radios; filter chips; bulk **Set**; board/backlog badges use short labels.
 - Sheets: Tasks tab `priority` column (Apps Script `ensureTaskPriorityColumn_` / `normalizePriority_`).
 
 ### REQ-MODEL-005 — Task labels

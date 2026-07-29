@@ -196,10 +196,20 @@ function normalizePriority_(raw) {
   var s = String(raw == null ? '' : raw)
     .trim()
     .toLowerCase()
-  if (s === 'q1' || s === '1' || s === 'do' || s === 'urgent') return 'q1'
+    .replace(/\s+/g, '')
+  if (s === 'q1' || s === '1' || s === 'do' || s === 'donow' || s === 'urgent')
+    return 'q1'
   if (s === 'q2' || s === '2' || s === 'schedule') return 'q2'
-  if (s === 'q3' || s === '3' || s === 'delegate') return 'q3'
-  if (s === 'q4' || s === '4' || s === 'eliminate' || s === 'drop') return 'q4'
+  if (
+    s === 'q3' ||
+    s === '3' ||
+    s === 'delegate' ||
+    s === 'q4' ||
+    s === '4' ||
+    s === 'eliminate' ||
+    s === 'drop'
+  )
+    return 'q3'
   return 'q2'
 }
 

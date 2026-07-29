@@ -63,7 +63,7 @@ describe('REQ-LOCAL-002 / REQ-MODEL-* — Migration', () => {
       dependencies: [],
     })
     expect(state!.tasks[0].priority).toBe('q1')
-    expect(state!.tasks[1].priority).toBe('q4')
+    expect(state!.tasks[1].priority).toBe('q3')
   })
 
   it('normalizes task labels on migrate', () => {

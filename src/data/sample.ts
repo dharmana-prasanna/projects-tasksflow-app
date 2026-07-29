@@ -145,7 +145,7 @@ export const SAMPLE_STATE: StoreState = {
       notes: '',
       projectId: 'proj-beta',
       labels: [],
-      priority: 'q4',
+      priority: 'q3',
       segments: [
         {
           date: '2026-07-24',

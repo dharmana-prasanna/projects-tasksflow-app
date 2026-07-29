@@ -1,6 +1,7 @@
 import {
   PRIORITY_META,
-  TASK_PRIORITIES,
+  UI_PRIORITIES,
+  uiPriority,
   type TaskPriority,
 } from '../domain/taskPriority'
 import type { Task } from '../types'
@@ -11,20 +12,12 @@ type Props = {
   onSelect: (priority: TaskPriority | 'all') => void
 }
 
-/** Eisenhower priority filter chips. */
+/** Compact priority filter: DoNow / Schedule / Delegate. */
 export function PriorityBar({ tasks, selected, onSelect }: Props) {
+  const selectedUi = selected === 'all' ? 'all' : uiPriority(selected)
+
   return (
     <div className="priority-bar">
-      <div className="priority-bar__heading">
-        <span className="priority-bar__title">Priority</span>
-        <span
-          className="field-help"
-          title="Filter by Eisenhower quadrant: Q1 Do, Q2 Schedule, Q3 Delegate, Q4 Eliminate."
-          aria-label="Filter by Eisenhower priority"
-        >
-          ?
-        </span>
-      </div>
       <div
         className="priority-bar__filters"
         role="group"
@@ -32,16 +25,16 @@ export function PriorityBar({ tasks, selected, onSelect }: Props) {
       >
         <button
           type="button"
-          className={`priority-chip${selected === 'all' ? ' priority-chip--active' : ''}`}
+          className={`priority-chip${selectedUi === 'all' ? ' priority-chip--active' : ''}`}
           onClick={() => onSelect('all')}
-          aria-pressed={selected === 'all'}
+          aria-pressed={selectedUi === 'all'}
         >
           All
         </button>
-        {TASK_PRIORITIES.map((id) => {
+        {UI_PRIORITIES.map((id) => {
           const meta = PRIORITY_META[id]
-          const count = tasks.filter((t) => t.priority === id).length
-          const active = selected === id
+          const count = tasks.filter((t) => uiPriority(t.priority) === id).length
+          const active = selectedUi === id
           return (
             <button
               key={id}

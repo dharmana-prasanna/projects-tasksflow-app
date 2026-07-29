@@ -2,7 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useRef } from 'react'
 import { shouldToggleTaskSelection } from '../domain/bulkTasks'
-import { normalizePriority, PRIORITY_META } from '../domain/taskPriority'
+import { normalizePriority, PRIORITY_META, uiPriority } from '../domain/taskPriority'
 import { formatRange } from '../time'
 import type { ColoredTask, DaySegment, Task, TaskActivateOptions } from '../types'
 
@@ -47,7 +47,7 @@ export function DraggableTask({
   }
 
   const multiDay = task.segments.length > 1
-  const priority = normalizePriority(task.priority)
+  const priority = uiPriority(normalizePriority(task.priority))
   const priorityMeta = PRIORITY_META[priority]
 
   return (

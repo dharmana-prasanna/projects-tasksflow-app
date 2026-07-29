@@ -11,7 +11,8 @@ import {
   DEFAULT_TASK_PRIORITY,
   normalizePriority,
   PRIORITY_META,
-  TASK_PRIORITIES,
+  UI_PRIORITIES,
+  uiPriority,
 } from '../domain/taskPriority'
 import {
   currentDependentIds,
@@ -312,40 +313,31 @@ export function TaskModal({
           </label>
 
           <fieldset className="task-priority">
-            <legend className="task-priority__legend">
-              Priority
-              <span
-                className="field-help"
-                title="Eisenhower Matrix: Q1 Do (important & urgent), Q2 Schedule (important), Q3 Delegate (urgent), Q4 Eliminate."
-                aria-label="Eisenhower Matrix priorities"
-              >
-                ?
-              </span>
-            </legend>
+            <legend className="task-priority__legend">Priority</legend>
             <div
               className="task-priority__options"
               role="radiogroup"
               aria-label="Task priority"
             >
-              {TASK_PRIORITIES.map((id) => {
+              {UI_PRIORITIES.map((id) => {
                 const meta = PRIORITY_META[id]
+                const active = uiPriority(priority) === id
                 return (
                   <label
                     key={id}
                     className={`task-priority__option task-priority__option--${id}${
-                      priority === id ? ' task-priority__option--active' : ''
+                      active ? ' task-priority__option--active' : ''
                     }`}
+                    title={meta.hint}
                   >
                     <input
                       type="radio"
                       name="task-priority"
                       value={id}
-                      checked={priority === id}
+                      checked={active}
                       onChange={() => setPriority(id)}
                     />
                     <span className="task-priority__short">{meta.short}</span>
-                    <span className="task-priority__label">{meta.label}</span>
-                    <span className="task-priority__hint">{meta.hint}</span>
                   </label>
                 )
               })}

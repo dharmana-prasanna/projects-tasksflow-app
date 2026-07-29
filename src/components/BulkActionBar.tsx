@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { normalizeLabel } from '../domain/taskLabels'
 import {
   PRIORITY_META,
-  TASK_PRIORITIES,
+  UI_PRIORITIES,
   type TaskPriority,
 } from '../domain/taskPriority'
 
@@ -79,9 +79,9 @@ export function BulkActionBar({
           value={priority}
           onChange={(e) => setPriority(e.target.value as TaskPriority)}
         >
-          {TASK_PRIORITIES.map((id) => (
+          {UI_PRIORITIES.map((id) => (
             <option key={id} value={id}>
-              {PRIORITY_META[id].short} · {PRIORITY_META[id].label}
+              {PRIORITY_META[id].short}
             </option>
           ))}
         </select>

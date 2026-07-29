@@ -6,6 +6,7 @@ import {
   normalizePriority,
   priorityLabel,
   taskMatchesPriorityFilter,
+  uiPriority,
 } from './taskPriority'
 
 export type { TaskPriority } from '../types'
@@ -23,23 +24,26 @@ function task(partial: Partial<Task> & Pick<Task, 'id'>): Task {
 }
 
 describe('REQ-MODEL-006 — Task priority', () => {
-  it('defaults missing/invalid to Q2', () => {
+  it('defaults missing/invalid to Schedule (q2)', () => {
     expect(normalizePriority(undefined)).toBe('q2')
     expect(normalizePriority('')).toBe('q2')
     expect(normalizePriority('nope')).toBe('q2')
     expect(DEFAULT_TASK_PRIORITY).toBe('q2')
   })
 
-  it('accepts q1–q4 and aliases', () => {
+  it('accepts q1–q3 and aliases; maps q4/eliminate to Delegate', () => {
     expect(normalizePriority('q1')).toBe('q1')
-    expect(normalizePriority('DO')).toBe('q1')
+    expect(normalizePriority('DoNow')).toBe('q1')
     expect(normalizePriority(3)).toBe('q3')
-    expect(normalizePriority('eliminate')).toBe('q4')
+    expect(normalizePriority('eliminate')).toBe('q3')
+    expect(normalizePriority(4)).toBe('q3')
+    expect(uiPriority('q4')).toBe('q3')
   })
 
-  it('formats labels', () => {
-    expect(priorityLabel('q1')).toBe('Q1 · Do')
-    expect(priorityLabel('q2')).toBe('Q2 · Schedule')
+  it('formats compact labels', () => {
+    expect(priorityLabel('q1')).toBe('DoNow')
+    expect(priorityLabel('q2')).toBe('Schedule')
+    expect(priorityLabel('q3')).toBe('Delegate')
   })
 
   it('filters by priority', () => {
@@ -52,7 +56,7 @@ describe('REQ-MODEL-006 — Task priority', () => {
 
   it('bulk-assigns priority', () => {
     const next = applyBulkPriority(
-      [task({ id: 'a', priority: 'q4' }), task({ id: 'b', priority: 'q1' })],
+      [task({ id: 'a', priority: 'q3' }), task({ id: 'b', priority: 'q1' })],
       'q2',
     )
     expect(next.map((t) => t.priority)).toEqual(['q2', 'q2'])

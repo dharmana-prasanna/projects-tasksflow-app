@@ -32,8 +32,8 @@ export type Task = {
   /** Free-form tags (normalized); used for filtering. */
   labels: string[]
   /**
-   * Eisenhower priority quadrant:
-   * q1 Do · q2 Schedule · q3 Delegate · q4 Eliminate
+   * Eisenhower priority: q1 DoNow · q2 Schedule · q3 Delegate
+   * (legacy q4 maps to Delegate via normalizePriority)
    */
   priority: TaskPriority
   segments: DaySegment[]

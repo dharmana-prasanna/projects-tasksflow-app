@@ -2,7 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useRef } from 'react'
 import { shouldToggleTaskSelection } from '../domain/bulkTasks'
-import { normalizePriority, PRIORITY_META } from '../domain/taskPriority'
+import { normalizePriority, PRIORITY_META, uiPriority } from '../domain/taskPriority'
 import type { ColoredTask, Task, TaskActivateOptions } from '../types'
 
 type Props = {
@@ -33,7 +33,7 @@ export function UnscheduledTaskCard({
     if (isDragging) dragged.current = true
   }, [isDragging])
 
-  const priority = normalizePriority(task.priority)
+  const priority = uiPriority(normalizePriority(task.priority))
   const priorityMeta = PRIORITY_META[priority]
 
   return (
