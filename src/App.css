@@ -1004,6 +1004,26 @@
   color: #1d4e89;
 }
 
+.unscheduled-card__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.unscheduled-card__label {
+  font-size: 0.62rem;
+  font-weight: 650;
+  padding: 0.06rem 0.28rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+  background: rgba(21, 37, 47, 0.05);
+  color: var(--muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .priority-bar {
   display: flex;
   flex-wrap: wrap;

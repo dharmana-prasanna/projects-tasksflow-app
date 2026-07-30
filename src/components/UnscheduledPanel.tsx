@@ -1,9 +1,6 @@
 import { useDroppable } from '@dnd-kit/core'
 import { useMemo } from 'react'
-import {
-  BACKLOG_DROP_ID,
-  groupUnscheduledByLabel,
-} from '../domain/unscheduled'
+import { BACKLOG_DROP_ID, sortUnscheduledTasks } from '../domain/unscheduled'
 import type { ColoredTask, Task, TaskActivateOptions } from '../types'
 import { UnscheduledTaskCard } from './UnscheduledTaskCard'
 
@@ -32,7 +29,7 @@ export function UnscheduledPanel({
     data: { backlog: true },
   })
 
-  const groups = useMemo(() => groupUnscheduledByLabel(tasks), [tasks])
+  const ordered = useMemo(() => sortUnscheduledTasks(tasks), [tasks])
 
   if (hidden) {
     return (
@@ -81,8 +78,8 @@ export function UnscheduledPanel({
           <h3 className="unscheduled-panel__title">Backlog</h3>
           <span
             className="field-help"
-            title="Grouped by label. Drag calendar tasks here to unschedule, or drag cards onto the board to schedule. Hide with ▹ to widen the board."
-            aria-label="Grouped by label. Drag calendar tasks here to unschedule, or drag cards onto the board to schedule."
+            title="Each task once, sorted by priority then title. Labels show on the card. Drag calendar tasks here to unschedule, or drag cards onto the board to schedule. Hide with ▹ to widen the board."
+            aria-label="Each task once, sorted by priority then title. Drag calendar tasks here to unschedule, or drag cards onto the board to schedule."
           >
             ?
           </span>
@@ -118,33 +115,18 @@ export function UnscheduledPanel({
         </p>
       ) : (
         <div className="unscheduled-panel__scroll">
-          {groups.map((group) => (
-            <section
-              key={group.key}
-              className="unscheduled-panel__group"
-              aria-label={`${group.label}, ${group.tasks.length} tasks`}
-            >
-              <h4 className="unscheduled-panel__group-title">
-                <span>{group.label}</span>
-                <span className="unscheduled-panel__group-count">
-                  {group.tasks.length}
-                </span>
-              </h4>
-              <ul className="unscheduled-panel__list">
-                {group.tasks.map((task) => (
-                  <li key={`${group.key}-${task.id}`}>
-                    <UnscheduledTaskCard
-                      task={task}
-                      groupKey={group.key}
-                      selected={selectedSet.has(task.id)}
-                      selectionActive={selectionActive}
-                      onTaskClick={onTaskClick}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+          <ul className="unscheduled-panel__list">
+            {ordered.map((task) => (
+              <li key={task.id}>
+                <UnscheduledTaskCard
+                  task={task}
+                  selected={selectedSet.has(task.id)}
+                  selectionActive={selectionActive}
+                  onTaskClick={onTaskClick}
+                />
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </aside>

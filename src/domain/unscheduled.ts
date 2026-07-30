@@ -1,10 +1,8 @@
+import { normalizePriority, uiPriority } from './taskPriority'
 import type { Task } from '../types'
 
 /** Droppable id for the backlog rail (calendar → backlog). */
 export const BACKLOG_DROP_ID = 'backlog-drop'
-
-/** Section title for backlog tasks with no labels. */
-export const UNLABELED_GROUP = 'Unlabeled'
 
 /** Tasks with no day segments sit in the backlog until dragged onto the board. */
 export function isTaskUnscheduled(task: { segments?: Task['segments'] }): boolean {
@@ -28,44 +26,21 @@ export function unscheduleTask<T extends Task>(task: T): T {
   return { ...task, segments: [] }
 }
 
-export type BacklogLabelGroup<T> = {
-  key: string
-  label: string
-  tasks: T[]
-}
+const PRIORITY_ORDER = { q1: 0, q2: 1, q3: 2 } as const
 
 /**
- * Group backlog tasks by label for the side panel.
- * A task with multiple labels appears under each; unlabeled tasks go in Unlabeled.
- * Groups sorted A–Z; Unlabeled last. Within a group, tasks keep input order.
+ * Flat backlog order: DoNow → Schedule → Delegate, then title, then id.
+ * Each task appears once (no label duplication).
  */
-export function groupUnscheduledByLabel<
-  T extends { id: string; labels?: string[] },
->(tasks: T[]): BacklogLabelGroup<T>[] {
-  const map = new Map<string, BacklogLabelGroup<T>>()
-
-  for (const task of tasks) {
-    const raw = (task.labels ?? [])
-      .map((l) => String(l).trim())
-      .filter(Boolean)
-    const labels = raw.length > 0 ? [...new Set(raw)] : [UNLABELED_GROUP]
-
-    for (const label of labels) {
-      const key = label.toLowerCase()
-      const existing = map.get(key)
-      if (existing) {
-        if (!existing.tasks.some((t) => t.id === task.id)) {
-          existing.tasks.push(task)
-        }
-      } else {
-        map.set(key, { key, label, tasks: [task] })
-      }
-    }
-  }
-
-  return [...map.values()].sort((a, b) => {
-    if (a.label === UNLABELED_GROUP) return 1
-    if (b.label === UNLABELED_GROUP) return -1
-    return a.label.localeCompare(b.label)
+export function sortUnscheduledTasks<
+  T extends { id: string; title?: string; priority?: Task['priority'] },
+>(tasks: T[]): T[] {
+  return tasks.slice().sort((a, b) => {
+    const pa = PRIORITY_ORDER[uiPriority(normalizePriority(a.priority))]
+    const pb = PRIORITY_ORDER[uiPriority(normalizePriority(b.priority))]
+    if (pa !== pb) return pa - pb
+    const ta = String(a.title ?? '').localeCompare(String(b.title ?? ''))
+    if (ta !== 0) return ta
+    return a.id.localeCompare(b.id)
   })
 }

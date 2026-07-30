@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   filterScheduledTasks,
   filterUnscheduledTasks,
-  groupUnscheduledByLabel,
   isTaskUnscheduled,
-  UNLABELED_GROUP,
+  sortUnscheduledTasks,
   unscheduleTask,
 } from './unscheduled'
 
@@ -70,26 +69,13 @@ describe('REQ-UI-018 — Unscheduled backlog', () => {
     expect(isTaskUnscheduled(next)).toBe(true)
   })
 
-  it('groupUnscheduledByLabel groups by each label; Unlabeled last', () => {
-    const groups = groupUnscheduledByLabel([
-      { id: 'a', labels: ['travel'] },
-      { id: 'b', labels: ['kids', 'travel'] },
-      { id: 'c', labels: [] },
+  it('sortUnscheduledTasks orders by priority then title; each task once', () => {
+    const ordered = sortUnscheduledTasks([
+      { id: 'c', title: 'Charlie', priority: 'q2' as const },
+      { id: 'a', title: 'Alpha', priority: 'q1' as const },
+      { id: 'b', title: 'Bravo', priority: 'q1' as const },
+      { id: 'd', title: 'Delta', priority: 'q3' as const },
     ])
-    expect(groups.map((g) => g.label)).toEqual([
-      'kids',
-      'travel',
-      UNLABELED_GROUP,
-    ])
-    expect(groups.find((g) => g.label === 'travel')?.tasks.map((t) => t.id)).toEqual([
-      'a',
-      'b',
-    ])
-    expect(groups.find((g) => g.label === 'kids')?.tasks.map((t) => t.id)).toEqual([
-      'b',
-    ])
-    expect(
-      groups.find((g) => g.label === UNLABELED_GROUP)?.tasks.map((t) => t.id),
-    ).toEqual(['c'])
+    expect(ordered.map((t) => t.id)).toEqual(['a', 'b', 'c', 'd'])
   })
 })

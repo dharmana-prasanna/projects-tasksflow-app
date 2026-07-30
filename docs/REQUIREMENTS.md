@@ -141,14 +141,14 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 
 ### REQ-UI-018 — Unscheduled backlog panel
 - **Board and Graph** views show a **right-side** **Backlog** rail of unscheduled tasks (`isTaskUnscheduled` / empty segments), filtered by the same project + label filters as the main view. It stays on the right on narrow viewports (does not move under the board).
-- Backlog tasks are **grouped by label** (`groupUnscheduledByLabel`); multi-label tasks appear under each label; tasks with no labels under **Unlabeled** (last). Groups are scrollable with sticky group headers.
+- Backlog is a **flat list** (`sortUnscheduledTasks`: priority DoNow → Schedule → Delegate, then title). Each task appears **once**; labels are shown on the card (not used as section headers).
 - Users can **hide/show** the rail (`▹` / vertical Backlog tab); preference persists in `flowboard-backlog-hidden` (REQ-LOCAL-008). Collapsed rail remains a drop target and shows the backlog count.
 - Users can add backlog tasks from the panel (`+`) without assigning dates/times.
 - In **Board** view, backlog cards are draggable onto calendar slots (same `DndContext` as the board). Drop calls `moveTaskToSlot` (creates a **15-minute** segment) and upserts — the task leaves the backlog and appears on the calendar.
 - In **Board** view, scheduled calendar tasks can be dragged **back onto the Backlog** drop target (`BACKLOG_DROP_ID`); drop calls `unscheduleTask` (clears `segments` to `[]`) so the task leaves the calendar and appears in the backlog.
 - In **Graph** view the same backlog list is shown for browse/add/edit; drag-to-schedule onto day columns is board-only (switch to Board to drop onto time slots).
 - Clicking a backlog card opens the task editor.
-- The open backlog panel fills workspace height; its grouped list scrolls (`overflow-y: auto`). Cards use `touch-action: pan-y` so the list can scroll; hold-to-drag still schedules/unschedules on the board.
+- The open backlog panel fills workspace height; its list scrolls (`overflow-y: auto`). Cards use `touch-action: pan-y` so the list can scroll; hold-to-drag still schedules/unschedules on the board.
 
 ### REQ-UI-017 — Filter by labels
 - Chrome shows a **LabelBar** of catalog labels plus **All labels**.

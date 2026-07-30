@@ -2,13 +2,12 @@ import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useRef } from 'react'
 import { shouldToggleTaskSelection } from '../domain/bulkTasks'
+import { normalizeLabels } from '../domain/taskLabels'
 import { normalizePriority, PRIORITY_META, uiPriority } from '../domain/taskPriority'
 import type { ColoredTask, Task, TaskActivateOptions } from '../types'
 
 type Props = {
   task: ColoredTask
-  /** Disambiguates drag ids when a task appears under multiple label groups. */
-  groupKey?: string
   selected?: boolean
   selectionActive?: boolean
   onTaskClick: (task: Task, options?: TaskActivateOptions) => void
@@ -17,7 +16,6 @@ type Props = {
 /** Draggable backlog card — drop onto a calendar slot to schedule. */
 export function UnscheduledTaskCard({
   task,
-  groupKey,
   selected = false,
   selectionActive = false,
   onTaskClick,
@@ -25,7 +23,7 @@ export function UnscheduledTaskCard({
   const dragged = useRef(false)
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
-      id: `${task.id}::unscheduled::${groupKey ?? '_'}`,
+      id: `${task.id}::unscheduled`,
       data: { task, unscheduled: true },
     })
 
@@ -35,6 +33,7 @@ export function UnscheduledTaskCard({
 
   const priority = uiPriority(normalizePriority(task.priority))
   const priorityMeta = PRIORITY_META[priority]
+  const labels = normalizeLabels(task.labels)
 
   return (
     <div
@@ -82,6 +81,15 @@ export function UnscheduledTaskCard({
         }}
       >
         <span className="unscheduled-card__title">{task.title || '(untitled)'}</span>
+        {labels.length > 0 && (
+          <span className="unscheduled-card__labels" aria-label="Labels">
+            {labels.map((label) => (
+              <span key={label} className="unscheduled-card__label">
+                {label}
+              </span>
+            ))}
+          </span>
+        )}
         <span className="unscheduled-card__meta">
           <span
             className={`unscheduled-card__priority unscheduled-card__priority--${priority}`}
