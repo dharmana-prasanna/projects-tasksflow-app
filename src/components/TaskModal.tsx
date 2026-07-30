@@ -15,6 +15,8 @@ import {
   UI_PRIORITIES,
   uiPriority,
 } from '../domain/taskPriority'
+import { normalizeTaskColor } from '../domain/taskColor'
+import { PROJECT_COLORS } from '../data/sample'
 import {
   currentDependentIds,
   eligibleDependentTasks,
@@ -69,6 +71,8 @@ export type FormFrame = {
   labels: string[]
   labelDraft: string
   priority: TaskPriority
+  /** Hex override, or empty string for project default. */
+  color: string
   unscheduled: boolean
 }
 
@@ -147,6 +151,8 @@ export function TaskModal({
   const [labels, setLabels] = useState<string[]>([])
   const [labelDraft, setLabelDraft] = useState('')
   const [priority, setPriority] = useState<TaskPriority>(DEFAULT_TASK_PRIORITY)
+  /** Empty string = use project color. */
+  const [taskColor, setTaskColor] = useState('')
   const [unscheduled, setUnscheduled] = useState(false)
   /** Previous form frames when drilling into a related task. */
   const [frameStack, setFrameStack] = useState<FormFrame[]>([])
@@ -175,6 +181,7 @@ export function TaskModal({
       labels,
       labelDraft,
       priority,
+      color: taskColor,
       unscheduled,
     }
   }
@@ -193,6 +200,7 @@ export function TaskModal({
     setLabels(frame.labels)
     setLabelDraft(frame.labelDraft)
     setPriority(frame.priority)
+    setTaskColor(frame.color)
     setUnscheduled(frame.unscheduled)
   }
 
@@ -206,6 +214,7 @@ export function TaskModal({
     setLabels(normalizeLabels(source.labels))
     setLabelDraft('')
     setPriority(normalizePriority(source.priority))
+    setTaskColor(normalizeTaskColor(source.color) ?? '')
     const schedule = loadScheduleFields(source)
     setUnscheduled(schedule.unscheduled)
     setSegments(schedule.segments)
@@ -340,6 +349,7 @@ export function TaskModal({
     if (!title.trim() || !projectId) return
     if (!unscheduled && segments.length === 0) return
     const normalized = normalizeLabels(labels)
+    const color = normalizeTaskColor(taskColor)
     const task: Task = {
       id: editingTaskId ?? crypto.randomUUID(),
       title: title.trim(),
@@ -347,6 +357,7 @@ export function TaskModal({
       projectId,
       labels: normalized,
       priority: normalizePriority(priority),
+      ...(color ? { color } : {}),
       segments: unscheduled ? [] : segments.map(normalizeSegment),
     }
     const labelMeta: LabelDef[] = normalized.map((name) => ({
@@ -450,6 +461,34 @@ export function TaskModal({
               </select>
             </div>
           </label>
+
+          <fieldset className="color-field">
+            <legend>Color — project default or override</legend>
+            <div className="color-swatches" role="group" aria-label="Task color">
+              <button
+                type="button"
+                className={`swatch swatch--project${
+                  !taskColor ? ' swatch--active' : ''
+                }`}
+                style={{ background: selected?.color ?? '#999' }}
+                aria-label="Use project color"
+                aria-pressed={!taskColor}
+                title="Use project color"
+                onClick={() => setTaskColor('')}
+              />
+              {PROJECT_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`swatch${taskColor === c ? ' swatch--active' : ''}`}
+                  style={{ background: c }}
+                  aria-label={`Color ${c}`}
+                  aria-pressed={taskColor === c}
+                  onClick={() => setTaskColor(c)}
+                />
+              ))}
+            </div>
+          </fieldset>
 
           <fieldset className="task-priority">
             <legend className="task-priority__legend">Priority</legend>

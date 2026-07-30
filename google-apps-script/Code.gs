@@ -192,6 +192,23 @@ function ensureTaskPriorityColumn_() {
   }
 }
 
+/** Append a color column on existing Tasks sheets (optional per-task override). */
+function ensureTaskColorColumn_() {
+  var sheet = ss_().getSheetByName(SHEET_TASKS)
+  if (!sheet) return
+  var lastCol = Math.max(1, sheet.getLastColumn())
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String)
+  if (headers.indexOf('color') === -1) {
+    sheet.getRange(1, headers.length + 1).setValue('color')
+  }
+}
+
+function normalizeTaskColor_(raw) {
+  var s = String(raw == null ? '' : raw).trim()
+  if (/^#[0-9A-Fa-f]{6}$/.test(s)) return s
+  return ''
+}
+
 var GTMAP_HEADERS = [
   'accountEmail',
   'googleTaskId',
@@ -337,9 +354,11 @@ function ensureAll_() {
     'projectId',
     'labels',
     'priority',
+    'color',
   ])
   ensureTaskLabelsColumn_()
   ensureTaskPriorityColumn_()
+  ensureTaskColorColumn_()
   ensureSheet_(SHEET_SEGS, [
     'taskId',
     'date',
@@ -558,6 +577,7 @@ function loadState_() {
       projectId: String(r.projectId || ''),
       labels: parseLabelsCell_(r.labels),
       priority: normalizePriority_(r.priority),
+      color: normalizeTaskColor_(r.color),
       segments: segments,
     })
   }
@@ -680,6 +700,7 @@ function saveState_(state, opts) {
       projectId: task.projectId,
       labels: task.labels || [],
       priority: normalizePriority_(task.priority),
+      color: normalizeTaskColor_(task.color),
       segments: segs,
     })
     for (var s = 0; s < segs.length; s++) {
@@ -727,6 +748,7 @@ function saveState_(state, opts) {
       'projectId',
       'labels',
       'priority',
+      'color',
       'date',
       'hour',
       'minute',
@@ -742,6 +764,7 @@ function saveState_(state, opts) {
         projectId: t.projectId,
         labels: formatLabelsCell_(t.labels),
         priority: normalizePriority_(t.priority),
+        color: normalizeTaskColor_(t.color),
         date: first ? String(first.date) : '',
         hour: first ? first.startHour : '',
         minute: first ? first.startMinute : '',
@@ -1249,6 +1272,7 @@ function appendTaskBacklogRow_(task) {
       'projectId',
       'labels',
       'priority',
+      'color',
       'date',
       'hour',
       'minute',
@@ -1265,6 +1289,7 @@ function appendTaskBacklogRow_(task) {
     if (h === 'projectId') return task.projectId
     if (h === 'labels') return formatLabelsCell_(task.labels)
     if (h === 'priority') return normalizePriority_(task.priority)
+    if (h === 'color') return normalizeTaskColor_(task.color)
     return ''
   })
   sheet.appendRow(row)

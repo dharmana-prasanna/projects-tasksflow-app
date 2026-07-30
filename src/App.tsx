@@ -39,6 +39,7 @@ import {
   toggleLabelFilter,
   taskMatchesLabelFilter,
 } from './domain/taskLabels'
+import { resolveTaskColor } from './domain/taskColor'
 import {
   filterScheduledTasks,
   filterUnscheduledTasks,
@@ -194,7 +195,7 @@ export default function App({ onLock }: AppProps) {
     () =>
       tasks.map((t) => ({
         ...t,
-        color: projectColor(t.projectId),
+        color: resolveTaskColor(t, projectColor),
       })),
     [tasks, projectColor],
   )

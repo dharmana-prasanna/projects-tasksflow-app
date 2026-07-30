@@ -24,7 +24,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 ### REQ-MODEL-001 — Projects
 - A project has `id`, `name`, and `color`.
 - Every task belongs to exactly one project.
-- Task chip color is the project color (not a per-task color).
+- Task chip color defaults to the project color; a task may set an optional **color override**.
 - At least one project must always exist.
 
 ### REQ-MODEL-002 — Flows
@@ -34,7 +34,8 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 - Dependencies reference a `flowId`.
 
 ### REQ-MODEL-003 — Tasks and day segments
-- A task has `id`, `title`, `notes`, `projectId`, `labels[]`, `priority`, and `segments[]`.
+- A task has `id`, `title`, `notes`, `projectId`, `labels[]`, `priority`, optional `color` (#RRGGBB override), and `segments[]`.
+- Display chip color = `task.color` when set, otherwise the project color (`resolveTaskColor`).
 - A day segment has `date` (YYYY-MM-DD), `startHour`, `startMinute`, `endHour`, `endMinute`.
 - Minutes are quantized to **0 | 15 | 30 | 45**.
 - End time is **exclusive** on the 15-minute grid (e.g. 6:00–7:00 occupies 6:00, 6:15, 6:30, 6:45).
@@ -224,7 +225,7 @@ Requirement IDs (e.g. `REQ-TIME-001`) map 1:1 to test cases.
 
 ### REQ-UI-012 — Dependency graph view
 - Topbar offers **Board** and **Graph** main views.
-- **Graph** shows a task dependency graph: nodes are tasks (title + project color), edges are dependencies (flow color).
+- **Graph** shows a task dependency graph: nodes are tasks (title + chip color), edges are dependencies (flow color).
 - Graph has **no time rows** (no hour/15‑minute grid).
 - Graph keeps **day columns** for every date that has **at least one task** (`daysWithTasks`); empty days are omitted.
 - Graph view includes the same right-side **Backlog** panel as Board (REQ-UI-018) for unscheduled tasks.

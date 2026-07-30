@@ -5,6 +5,7 @@ import {
   normalizeLabels,
 } from '../domain/taskLabels'
 import { normalizePriority } from '../domain/taskPriority'
+import { normalizeTaskColor } from '../domain/taskColor'
 import { normalizeMinute, singleDaySegment } from '../time'
 import type {
   DaySegment,
@@ -69,6 +70,7 @@ function migrateTask(task: LegacyTask, fallbackProjectId: string, projectIds: Se
     segments = [singleDaySegment(SAMPLE_STATE.tasks[0].segments[0].date, 9, 0)]
   }
 
+  const override = normalizeTaskColor(task.color)
   return {
     id: task.id,
     title: task.title,
@@ -76,6 +78,7 @@ function migrateTask(task: LegacyTask, fallbackProjectId: string, projectIds: Se
     projectId,
     labels: normalizeLabels(task.labels),
     priority: normalizePriority(task.priority),
+    ...(override ? { color: override } : {}),
     segments,
   }
 }

@@ -2373,6 +2373,7 @@
 
 .color-swatches {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.45rem;
 }
 
@@ -2385,9 +2386,32 @@
   padding: 0;
 }
 
+.swatch--project {
+  position: relative;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+}
+
+.swatch--project::after {
+  content: 'P';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.55);
+}
+
 .swatch--active {
   border-color: var(--ink);
   box-shadow: 0 0 0 2px #fff inset;
+}
+
+.swatch--project.swatch--active {
+  box-shadow:
+    0 0 0 2px #fff inset,
+    inset 0 0 0 2px rgba(255, 255, 255, 0.85);
 }
 
 .modal__actions {

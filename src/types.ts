@@ -36,10 +36,14 @@ export type Task = {
    * (legacy q4 maps to Delegate via normalizePriority)
    */
   priority: TaskPriority
+  /**
+   * Optional chip color override (#RRGGBB). When omitted, use the project color.
+   */
+  color?: string
   segments: DaySegment[]
 }
 
-/** Task with resolved project color for rendering */
+/** Task with resolved display color for rendering */
 export type ColoredTask = Task & { color: string }
 
 export type Dependency = {

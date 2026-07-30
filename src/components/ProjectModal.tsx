@@ -72,7 +72,7 @@ export function ProjectModal({
           </label>
 
           <fieldset className="color-field">
-            <legend>Color — all tasks in this project use it</legend>
+            <legend>Default color for tasks (tasks can override)</legend>
             <div className="color-swatches">
               {PROJECT_COLORS.map((c) => (
                 <button

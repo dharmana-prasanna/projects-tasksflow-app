@@ -7,6 +7,12 @@ export const PROJECT_COLORS = [
   '#5b3d8a',
   '#8a2f45',
   '#2f6f8a',
+  '#0f766e',
+  '#b45309',
+  '#9f1239',
+  '#4338ca',
+  '#166534',
+  '#0e7490',
 ]
 
 /** Distinct palette for flow arrows (separate from project/task chip colors) */
@@ -17,6 +23,12 @@ export const FLOW_COLORS = [
   '#6a4c93',
   '#d4a017',
   '#3d5a80',
+  '#ea580c',
+  '#db2777',
+  '#059669',
+  '#7c3aed',
+  '#ca8a04',
+  '#0284c7',
 ]
 
 /** Seed data matching the sketch (week of Jul 20, 2026). */
