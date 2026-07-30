@@ -250,7 +250,8 @@ describe('REQ-UI-012 — Dependency graph day columns', () => {
       endMinute: 30,
       height: GRAPH_NODE_HEIGHT,
     })
-    expect(GRAPH_NODE_HEIGHT).toBeGreaterThanOrEqual(56)
+    expect(GRAPH_NODE_HEIGHT).toBeGreaterThanOrEqual(32)
+    expect(GRAPH_NODE_HEIGHT).toBeLessThanOrEqual(42)
   })
 
   it('renders start/end time corners on graph node cards', () => {

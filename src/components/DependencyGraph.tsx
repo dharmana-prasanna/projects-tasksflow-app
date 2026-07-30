@@ -318,31 +318,31 @@ export function DependencyGraph({
                 className="graph-node__card"
                 width={node.width}
                 height={node.height}
-                rx={10}
-                ry={10}
+                rx={6}
+                ry={6}
                 style={{ ['--task-color' as string]: node.color }}
               />
               <text
                 className="graph-node__title"
-                x={12}
-                y={22}
+                x={8}
+                y={13}
                 dominantBaseline="middle"
               >
-                {node.title.length > 22
-                  ? `${node.title.slice(0, 21)}…`
+                {node.title.length > 24
+                  ? `${node.title.slice(0, 23)}…`
                   : node.title}
               </text>
               <text
                 className="graph-node__time graph-node__time--start"
-                x={12}
-                y={node.height - 10}
+                x={8}
+                y={node.height - 7}
               >
                 {formatSlot(node.startHour, node.startMinute)}
               </text>
               <text
                 className="graph-node__time graph-node__time--end"
-                x={node.width - 12}
-                y={node.height - 10}
+                x={node.width - 8}
+                y={node.height - 7}
                 textAnchor="end"
               >
                 {formatSlot(node.endHour, node.endMinute)}

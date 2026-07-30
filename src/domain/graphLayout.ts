@@ -58,12 +58,12 @@ export type GraphLayout = {
 }
 
 export const GRAPH_NODE_WIDTH = 168
-/** Room for title + start/end time corners. */
-export const GRAPH_NODE_HEIGHT = 58
-export const GRAPH_GAP_X = 28
-export const GRAPH_GAP_Y = 16
-export const GRAPH_PAD = 24
-export const GRAPH_HEADER_HEIGHT = 48
+/** Compact row: title + time strip. */
+export const GRAPH_NODE_HEIGHT = 36
+export const GRAPH_GAP_X = 24
+export const GRAPH_GAP_Y = 8
+export const GRAPH_PAD = 20
+export const GRAPH_HEADER_HEIGHT = 42
 
 /** Earliest segment date for a task, or empty if none. */
 export function taskColumnDate(task: Pick<Task, 'segments'>): string {

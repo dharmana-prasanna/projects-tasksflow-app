@@ -1267,8 +1267,8 @@
 .graph-node__card {
   fill: #fff;
   stroke: color-mix(in srgb, var(--task-color) 70%, #c7d5dc);
-  stroke-width: 2;
-  filter: drop-shadow(0 4px 10px rgba(20, 40, 55, 0.08));
+  stroke-width: 1.5;
+  filter: drop-shadow(0 2px 5px rgba(20, 40, 55, 0.07));
   transition:
     fill 0.15s ease,
     stroke-width 0.15s ease;
@@ -1276,18 +1276,18 @@
 
 .graph-node:hover .graph-node__card {
   fill: color-mix(in srgb, var(--task-color) 12%, #fff);
-  stroke-width: 2.5;
+  stroke-width: 2;
 }
 
 .graph-node--selected .graph-node__card {
   fill: color-mix(in srgb, var(--task-color) 16%, #fff);
   stroke: #1d4e89;
-  stroke-width: 3;
+  stroke-width: 2.25;
 }
 
 .graph-node__title {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 650;
   fill: var(--ink);
   pointer-events: none;
@@ -1295,7 +1295,7 @@
 
 .graph-node__time {
   font-family: var(--font-sans);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 550;
   fill: var(--muted);
   pointer-events: none;
